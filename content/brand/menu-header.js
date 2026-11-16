@@ -44,6 +44,7 @@
 
   // ---- music: same song and same on/off setting as the home page (pinia "audio" store in localStorage) ----
   const MUSIC = '/media/sounds/marathon-music-2.mp3';
+  try { if (!localStorage.getItem('mbAudioFix1')) { localStorage.removeItem('audio'); localStorage.setItem('mbAudioFix1', '1'); } } catch (e) { /* private mode */ }
   const readPref = () => { try { return JSON.parse(localStorage.getItem('audio') || '{}').isAudioEnabled !== false; } catch (e) { return true; } };
   const savePref = on => { try { localStorage.setItem('audio', JSON.stringify({ isAudioEnabled: on })); } catch (e) { /* private mode */ } };
   let audioOn = readPref(), riveSound = null;
@@ -106,7 +107,10 @@
         try {
           riveSound = r.viewModelInstance.boolean('isAudioEnabled');
           riveSound.value = audioOn;
-          riveSound.on(v => { if (v !== audioOn) setAudio(v); });   // the Rive switch toggles itself on click
+          // only real clicks count: the Rive state machine reports its own default ("off") while loading
+          let userTap = 0;
+          sw.addEventListener('pointerdown', () => { userTap = Date.now(); });
+          riveSound.on(v => { if (Date.now() - userTap < 1500 && v !== audioOn) setAudio(v); else if (v !== audioOn) riveSound.value = audioOn; });
         } catch (e) { /* optional */ }
       });
     }

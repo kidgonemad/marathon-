@@ -257,6 +257,8 @@ else:
     studio_logo_css = '<style>.section-contacts__logo{display:none!important}</style>'
 # The archived page HTML is a snapshot taken after the intro had finished, so it shows the home page
 # for a moment before the app re-creates the intro screen. Keep the page hidden until the intro exists.
+studio_logo_css += ('<script>try{if(!localStorage.getItem("mbAudioFix1")){localStorage.removeItem("audio");'
+                    'localStorage.setItem("mbAudioFix1","1")}}catch(e){}</script>')
 studio_logo_css += ('<style id="mb-boot">html:not(.mb-ready) #__nuxt,html:not(.mb-ready) #teleports{visibility:hidden}'
                     'html:not(.mb-ready) body{background:#eb3322}</style>'
                     '<script>(function(){var d=document.documentElement,done=function(){d.classList.add("mb-ready")};'
@@ -414,7 +416,8 @@ js_swaps = [
     # It is started silently inside the first tap — the AudioManager's first-click handler — because phones
     # block media that starts later from a timer (the site asks for music 600 ms after START).
     ('this.ctx.state==="suspended"&&this.ctx.resume(),window.removeEventListener("click",e)};window.addEventListener("click",e)',
-     'this.ctx.state==="suspended"&&this.ctx.resume(),window.MBMusic&&window.MBMusic.unlock(this._resolveUrl("ambient")),'
+     'this.ctx.state==="suspended"&&this.ctx.resume(),window.MBMusic&&(this.store.isAudioEnabled?'
+     'window.MBMusic.start(this._resolveUrl("ambient"),1.5):window.MBMusic.unlock(this._resolveUrl("ambient"))),'
      'window.removeEventListener("click",e)};window.addEventListener("click",e)'),
     ('const n=await this._loadBuffer(e);if(!n)return;const r=this.ctx.createBufferSource();r.buffer=n,r.loop=!0;'
      'const i=this.ctx.createGain();r.connect(i),i.connect(this.ctx.destination),i.gain.value=0,'
@@ -423,6 +426,10 @@ js_swaps = [
      'window.MBMusic.start(this._resolveUrl(e),1.5);this.ambientSource={stop(){},disconnect(){}};'
      'this.ambientGain={gain:{cancelScheduledValues(){},setValueAtTime(){},linearRampToValueAtTime(){},value:0},'
      'disconnect(){}};this.currentAmbientName=e'),
+    ('async playAmbient(e="ambient"){if(!this.store.isAudioEnabled||(this.ctx||(this.ctx=new(window.AudioContext||'
+     'window.webkitAudioContext)),this.ctx.state==="suspended"&&await this.ctx.resume(),this.currentAmbientName===e&&'
+     'this.ambientSource))return;',
+     'async playAmbient(e="ambient"){if(!this.store.isAudioEnabled||this.currentAmbientName===e&&this.ambientSource)return;'),
     ('stopAmbient(e=1.5){if(!this.ambientSource||!this.ambientGain)return;',
      'stopAmbient(e=1.5){if(!this.ambientSource||!this.ambientGain)return;window.MBMusic&&window.MBMusic.stop(Math.min(e,1.5));'),
     # footer credit links to 33rd Creative (the logo itself is drawn/animated by /brand/studio.js)

@@ -19,7 +19,8 @@ SAME_ORIGIN = [
     '/lottie/bubble01.json', '/lottie/bubble02.json', '/lottie/bubble03.json',
     '/lottie/northern.json', '/lottie/southern.json',
 ]
-SOUNDS = ['ambient', 'click', 'hover', 'logo', 'swoosh', 'map-hover', 'map-click', 'map-leave', 'empty-click']
+SOUNDS = ['click',   # 'ambient' (the old music) is replaced by content/media/marathon-music.mp3
+           'hover', 'logo', 'swoosh', 'map-hover', 'map-click', 'map-leave', 'empty-click']
 BLOB_FILES = {'/rive/rive.riv': '/media/rive.riv'}
 BLOB_FILES.update({f'/sounds/{s}.mp3': f'/media/sounds/{s}.mp3' for s in SOUNDS})
 

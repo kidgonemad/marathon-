@@ -277,10 +277,9 @@ open(html_path, 'w', encoding='utf-8').write(H)
 # ---------------------------------------------------------------- 3D models (built by tools/models.py)
 for f in glob.glob(rel('content/three/*.glb')):
     shutil.copy(f, os.path.join(dist, 'three', os.path.basename(f)))
-if os.path.exists(rel('content/media/ambient.mp3')):     # site music (looped by the site's audio manager)
-    # served under a new name (see js_swaps) so browsers can't keep playing a cached copy of the old track
-    for name in ('ambient.mp3', 'marathon-music.mp3'):
-        shutil.copy(rel('content/media/ambient.mp3'), os.path.join(dist, 'media', 'sounds', name))
+if os.path.exists(rel('content/media/marathon-music.mp3')):     # site music (looped by the site's audio manager)
+    # served as marathon-music.mp3 (see js_swaps); the original Planetoño ambient track is not shipped
+    shutil.copy(rel('content/media/marathon-music.mp3'), os.path.join(dist, 'media', 'sounds', 'marathon-music.mp3'))
 for f in glob.glob(rel('content/lottie/*.json')):     # badges, built by tools/badges.py
     shutil.copy(f, os.path.join(dist, 'lottie', os.path.basename(f)))
 

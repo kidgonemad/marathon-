@@ -783,7 +783,7 @@ marathon_burger(sc)
 # Tray 2 — Hot Wing Basket: wings, fries, drink
 for n in ('Astro_Chik', 'Hot_Dog', 'Ice_Cream'):
     sc.hide(n)
-sc.place('Hot_Dog', 'WingBasket', wing_basket(), sc.pivot('Hot_Dog', spots['Hot_Dog'][0]), 0, yaw=0.3, width=spots['Burger'][1][0] * 1.35)
+sc.place('Hot_Dog', 'WingBasket', wing_basket(), sc.pivot('Hot_Dog', spots['Hot_Dog'][0]), 0, yaw=0.3, width=spots['Burger'][1][0] * 1.8)
 _p = sc.pivot('Astro_Chik', spots['Astro_Chik'][0])
 sc.place('Astro_Chik', 'Soda', soda(face=facing(_p, 200, -0.3), straw_colour='purple'), _p, burger_h * 1.55, yaw=-0.3)
 

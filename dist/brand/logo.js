@@ -130,35 +130,36 @@
       if (loaded) return;
       loaded = true;
       const fast = reduced();
-      // left-to-right wipe: each palm spins away as the letters under it pop in
-      const W = D.box[0], WIPE = fast ? 0 : 420;
+      // clean swap: the palms spin away first (left to right); the wordmark only appears once they are gone
+      const W = D.box[0];
+      const OUT_STAGGER = fast ? 0 : 55, OUT_DUR = fast ? 1 : 240;
+      const GONE = (P.palms.length - 1) * OUT_STAGGER + OUT_DUR;          // palms fully gone at this time
       P.palms.forEach((p, i) => {
-        const delay = (P.palmX[i] / W) * WIPE;
         anim(p, [{ transform: p.style.transform, opacity: 1 }, { transform: 'scale(1.2) rotate(30deg)', opacity: 1, offset: 0.3 },
-                 { transform: 'scale(0) rotate(90deg)', opacity: 0 }], { duration: fast ? 1 : 150, delay, easing: 'ease-in' });
+                 { transform: 'scale(0) rotate(90deg)', opacity: 0 }], { duration: OUT_DUR, delay: i * OUT_STAGGER, easing: 'ease-in' });
       });
+      setTimeout(() => { P.loader.style.display = 'none'; }, GONE);
       P.word.style.opacity = 1;
       anim(P.box, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1.04)', opacity: 1, offset: 0.7 }, { transform: 'scaleX(1)', opacity: 1 }],
-           { duration: fast ? 1 : WIPE + 160, easing: OUT });
+           { duration: fast ? 1 : 460, delay: GONE, easing: OUT, fill: 'both' });
       P.letters.forEach((l, i) => {
         const cx = (D.letters[i].x0 + D.letters[i].x1) / 2;
         anim(l, [{ transform: 'translateY(30px) scale(0.2)', opacity: 0 }, { transform: 'translateY(-10px) scale(1.15)', opacity: 1, offset: 0.6 },
                  { transform: 'translateY(0) scale(1)', opacity: 1 }],
-             { duration: fast ? 1 : 420, delay: fast ? 0 : 110 + (cx / W) * WIPE, easing: OUT });
+             { duration: fast ? 1 : 420, delay: GONE + (fast ? 0 : 60 + (cx / W) * 360), easing: OUT, fill: 'both' });
       });
-      setTimeout(() => { P.loader.style.display = 'none'; }, fast ? 0 : WIPE + 300);
       // the wave that runs across the word once it has landed
       if (!fast) {
         P.letters.forEach((l, i) => setTimeout(() => {
           anim(l, [{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-34px) scale(1.06)' }, { transform: 'translateY(0) scale(1)' }],
                { duration: 380, easing: 'ease-in-out' });
-        }, 820 + i * 70));
+        }, GONE + 900 + i * 70));
       }
       setTimeout(() => {
         P.burger.style.opacity = 1;
         anim(P.burger, [{ transform: 'scale(0) rotate(-14deg)' }, { transform: 'scale(1.18) rotate(4deg)', offset: 0.65 }, { transform: 'scale(1) rotate(0)' }],
              { duration: fast ? 1 : 560, easing: OUT });
-      }, fast ? 0 : 1250);
+      }, fast ? 0 : GONE + 1250);
       scheduleIdle();
     }
 

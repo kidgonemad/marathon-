@@ -1,63 +1,65 @@
 /* Site music, shared by the home page (patched AudioManager) and the menu page (menu-header.js).
  *
- * Phones and Safari only let an <audio> element start inside a tap. The home page asks for the music
- * 600 ms after START, outside the tap, so it was silently blocked. unlock() runs inside the tap: it starts
- * the element at volume 0 (through a Web Audio gain node, because iOS ignores element.volume); start() /
- * stop() then just fade that gain. Streaming via <audio> keeps the 2.6 MB song from being decoded whole.
+ * Plain <audio loop> element only — no Web Audio. On iPhone, Web Audio is muted by the ringer/silent switch
+ * and stays silent if its AudioContext isn't running; a plain media element plays like the click/hover sounds.
+ * unlock() must run inside a tap (phones only allow media to start there); start()/stop() fade the volume
+ * (iOS ignores element.volume, so there it simply plays/pauses).
  */
 window.MBMusic = (function () {
-  let g = null, gen = 0;
+  let a = null, url = null, raf = 0, wanted = false;
 
-  function graph(ctx, url) {
-    if (g) return g;
-    const a = new Audio(url);
-    a.loop = true;
-    a.preload = 'auto';
-    a.crossOrigin = 'anonymous';
-    a.setAttribute('playsinline', '');
-    const src = ctx.createMediaElementSource(a);
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-    src.connect(gain);
-    gain.connect(ctx.destination);
-    g = { a, gain, ctx, wanted: false };
-    return g;
+  function el(src) {
+    if (!a || (src && src !== url)) {
+      if (a) a.pause();
+      url = src;
+      a = new Audio(src);
+      a.loop = true;
+      a.preload = 'auto';
+      a.setAttribute('playsinline', '');
+      a.volume = 0;
+    }
+    return a;
   }
 
-  function ramp(to, secs) {
-    const p = g.gain.gain, t = g.ctx.currentTime;
-    p.cancelScheduledValues(t);
-    p.setValueAtTime(p.value, t);
-    p.linearRampToValueAtTime(to, t + secs);
+  function fade(to, ms, done) {
+    cancelAnimationFrame(raf);
+    const from = a.volume, t0 = performance.now();
+    const step = now => {
+      const k = Math.min(1, (now - t0) / ms);
+      try { a.volume = from + (to - from) * k; } catch (e) { /* read-only on iOS */ }
+      if (k < 1) raf = requestAnimationFrame(step); else if (done) done();
+    };
+    raf = requestAnimationFrame(step);
   }
 
-  // call inside a tap/click
-  function unlock(ctx, url) {
-    const m = graph(ctx, url);
-    if (ctx.state === 'suspended') ctx.resume();
-    m.a.play().catch(() => {});
-    const my = gen;
-    setTimeout(() => { if (!m.wanted && gen === my) m.a.pause(); }, 4000);   // nobody asked for music
-    return m;
+  // call inside a tap/click: starts the element silently so later play() calls are allowed
+  function unlock(src) {
+    const m = el(src);
+    const p = m.play();
+    if (p && p.catch) p.catch(() => {});
+    setTimeout(() => { if (!wanted) m.pause(); }, 4000);      // nobody asked for music
   }
 
-  function start(ctx, url, fade) {
-    const m = graph(ctx, url);
-    gen++;
-    m.wanted = true;
-    if (ctx.state === 'suspended') ctx.resume();
-    m.a.play().catch(() => {});
-    ramp(0.5, fade || 1.5);
-    return gen;
+  function start(src, fadeSecs) {
+    const m = el(src);
+    wanted = true;
+    const p = m.play();
+    if (p && p.catch) p.catch(() => {});
+    fade(0.5, (fadeSecs || 1.5) * 1000);
   }
 
-  function stop(fade) {
-    if (!g) return;
-    g.wanted = false;
-    const my = ++gen;
-    ramp(0, fade || 1);
-    setTimeout(() => { if (gen === my) g.a.pause(); }, (fade || 1) * 1000 + 60);
+  function stop(fadeSecs) {
+    if (!a) return;
+    wanted = false;
+    fade(0, (fadeSecs || 1) * 1000, () => { if (!wanted) a.pause(); });
   }
 
-  return { unlock, start, stop, get playing() { return !!(g && g.wanted); } };
+  // pause with the page in the background, resume when it comes back
+  document.addEventListener('visibilitychange', () => {
+    if (!a || !wanted) return;
+    if (document.hidden) a.pause();
+    else { const p = a.play(); if (p && p.catch) p.catch(() => {}); }
+  });
+
+  return { unlock, start, stop, get playing() { return !!(a && wanted && !a.paused); }, get el() { return a; } };
 })();

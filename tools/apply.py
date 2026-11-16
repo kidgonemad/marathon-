@@ -264,6 +264,13 @@ studio_logo_css += ('<style id="mb-boot">html:not(.mb-ready) #__nuxt,html:not(.m
                     'mo.observe(d,{childList:true,subtree:true});setTimeout(done,8000)})();</script>')
 # palm decorations: a bit larger than the ✦ they replace so the fronds read clearly
 studio_logo_css += '<style>svg.star{width:clamp(2.75rem,2.2rem + 1.7vw,4.4rem)!important;height:auto}</style>'
+# palms sway gently around the trunk base (the paths sway; the svg keeps the site's own parallax transform)
+studio_logo_css += ('<style>@keyframes mbPalmSway{0%{transform:rotate(-6deg)}100%{transform:rotate(6deg)}}'
+                    'svg.star path{transform-box:view-box;transform-origin:50% 96%;'
+                    'animation:mbPalmSway 3.4s ease-in-out infinite alternate}'
+                    'svg.star:nth-child(2n) path{animation-duration:4.1s;animation-delay:-1.7s;animation-direction:alternate-reverse}'
+                    'svg.star:nth-child(3n) path{animation-duration:2.9s;animation-delay:-.8s}'
+                    '@media (prefers-reduced-motion:reduce){svg.star path{animation:none}}</style>')
 body = re.sub(r'<canvas class="stepper__rive"([^>]*?) width="\d+" height="\d+"([^>]*)></canvas>',
               r'<div class="stepper__rive"\1\2></div>', body)
 stepper_cfg = {'steps': C['how_it_works']['steps'], 'final': C['how_it_works']['final_step']}
@@ -403,17 +410,17 @@ js_swaps = [
      'E=window.MarathonLogo.mount(o.value),d=E.loadInput'),
     ('"Click | Planetoño logo"', '"Click | Logo"'),
     ('ambient:`${BASE_URL}/ambient.mp3`', 'ambient:`${BASE_URL}/marathon-music-2.mp3`'),   # site music
-    # Music: stream through /brand/music.js. Its <audio> element is started (silently) inside the first
-    # tap — the AudioManager's first-click handler — because phones/Safari block element playback that
-    # starts later from a timer (the site asks for music 600 ms after START). playAmbient/stopAmbient fade it.
+    # Music: a plain <audio> element via /brand/music.js (no Web Audio: iPhone mutes Web Audio on silent mode).
+    # It is started silently inside the first tap — the AudioManager's first-click handler — because phones
+    # block media that starts later from a timer (the site asks for music 600 ms after START).
     ('this.ctx.state==="suspended"&&this.ctx.resume(),window.removeEventListener("click",e)};window.addEventListener("click",e)',
-     'this.ctx.state==="suspended"&&this.ctx.resume(),window.MBMusic&&window.MBMusic.unlock(this.ctx,this._resolveUrl("ambient")),'
+     'this.ctx.state==="suspended"&&this.ctx.resume(),window.MBMusic&&window.MBMusic.unlock(this._resolveUrl("ambient")),'
      'window.removeEventListener("click",e)};window.addEventListener("click",e)'),
     ('const n=await this._loadBuffer(e);if(!n)return;const r=this.ctx.createBufferSource();r.buffer=n,r.loop=!0;'
      'const i=this.ctx.createGain();r.connect(i),i.connect(this.ctx.destination),i.gain.value=0,'
      'i.gain.linearRampToValueAtTime(.5,this.ctx.currentTime+3),r.start(0),this.ambientSource=r,this.ambientGain=i,'
      'this.currentAmbientName=e',
-     'window.MBMusic.start(this.ctx,this._resolveUrl(e),1.5);this.ambientSource={stop(){},disconnect(){}};'
+     'window.MBMusic.start(this._resolveUrl(e),1.5);this.ambientSource={stop(){},disconnect(){}};'
      'this.ambientGain={gain:{cancelScheduledValues(){},setValueAtTime(){},linearRampToValueAtTime(){},value:0},'
      'disconnect(){}};this.currentAmbientName=e'),
     ('stopAmbient(e=1.5){if(!this.ambientSource||!this.ambientGain)return;',

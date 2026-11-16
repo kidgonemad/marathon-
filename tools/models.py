@@ -30,7 +30,8 @@ C = {
     # Marathon Burger build: brioche, grilled onions, American cheese, pickles, Fresno peppers, secret sauce
     'brioche': [0.8, 0.28, 0.02], 'onion': [0.75, 0.38, 0.06], 'sauce': [1.0, 0.38, 0.18],
     'american': [1.0, 0.62, 0.04], 'wagyu': [0.22, 0.05, 0.015],
-    'logo_red': [0.77, 0.02, 0.02], 'hashlite': [1.0, 0.8, 0.25], 'sauce_dark': [0.55, 0.06, 0.0], 'pickle': [0.22, 0.55, 0.02], 'fresno': [0.9, 0.03, 0.02],
+    'logo_red': [0.77, 0.02, 0.02], 'hashlite': [1.0, 0.8, 0.25], 'sauce_dark': [0.55, 0.06, 0.0],
+    'logo_grey': [0.62, 0.62, 0.62], 'toast': [0.62, 0.3, 0.04], 'pickle': [0.22, 0.55, 0.02], 'fresno': [0.9, 0.03, 0.02],
 }
 
 
@@ -111,8 +112,9 @@ def svg_polys(d, steps=7):
 
 
 def logo_decal(width=0.44, y_mid=0.47, r0=0.30, taper=0.39 - 0.30, h_cup=0.86, face=0.0):
-    """One Marathon Burger logo on the cup front: red rectangle, white MARATHON, white 'Burger' under it,
-    bent onto the tapered cup wall (not wrapped around it)."""
+    """One Marathon Burger logo on the cup front, like the restaurant's cups: a red rectangle with white
+    MARATHON, and the 'Burger' script below it in light grey straight on the cup (not inside the red box).
+    Bent onto the tapered cup wall, not wrapped around it."""
     T = json.load(open(os.path.join(ROOT, 'content', 'brand', 'traced.json')))
     W, H = T['box']; bb = T['burger']['bbox']; pad = 50
     k = width / (W + 2 * pad)
@@ -138,12 +140,12 @@ def logo_decal(width=0.44, y_mid=0.47, r0=0.30, taper=0.39 - 0.30, h_cup=0.86, f
     def place2d(shape):
         return affinity.affine_transform(shape, [k, 0, 0, -k, -width / 2 + pad * k, y_mid + full_h / 2 - pad * k])
 
-    panel = Polygon([(-width / 2, y_mid - full_h / 2), (width / 2, y_mid - full_h / 2),
-                     (width / 2, y_mid + full_h / 2), (-width / 2, y_mid + full_h / 2)])
-    letters = [place2d(svg_polys(l['d'])) for l in T['letters']] + [place2d(svg_polys(T['burger']['d']))]
+    panel = place2d(Polygon([(-pad * .6, -pad * .6), (W + pad * .6, -pad * .6), (W + pad * .6, H + pad * .6), (-pad * .6, H + pad * .6)]))
+    letters = [place2d(svg_polys(l['d'])) for l in T['letters']]
     white = trimesh.util.concatenate([flat(s, 0.012, 0.005) for s in letters if s is not None and not s.is_empty])
+    burger = to_cup(flat(place2d(svg_polys(T['burger']['d'])), 0.003, 0.004), 1)
     return {'Logo_Panel': (to_cup(flat(panel, 0.003, 0.009), 4), 'logo_red'),
-            'Logo_Text': (to_cup(white, 1), 'white')}
+            'Logo_Text': (to_cup(white, 1), 'white'), 'Logo_Burger': (burger, 'logo_grey')}
 
 
 def soda(liquid_top=None, band='logo', lid=True, face=0.0):
@@ -260,29 +262,27 @@ def breakfast_sandwich():
 
 
 def hashbrowns():
-    """Two golden oval hash brown patties (one flat, one leaning on it) with shredded-potato strands on top."""
+    """Two golden oval hash brown patties (one flat, one leaning on it): a raised, lighter top face with a
+    rounded-looking stepped edge and a few toasted flecks."""
     rng = np.random.default_rng(11)
 
     def patty():
         oval = LineString([(-0.2, 0), (0.2, 0)]).buffer(0.2, resolution=24)
-        body = yup(extrude(oval, 0.11))
-        body = crispy(body.subdivide(), 0.008, 5)
-        strands = []
-        for _ in range(26):
-            x, z = rng.uniform(-0.33, 0.33), rng.uniform(-0.14, 0.14)
-            if (abs(x) - 0.2) ** 2 + z ** 2 > 0.15 ** 2 and abs(x) > 0.2:
-                continue
-            ln = rng.uniform(0.06, 0.15)
-            s = trimesh.creation.box([ln, 0.012, 0.018])
-            s = rotated(s, rng.uniform(-0.5, 0.5), [0, 1, 0])
-            strands.append(moved(s, x, 0.112, z))
-        return body, trimesh.util.concatenate(strands)
+        body = yup(extrude(oval, 0.085))
+        top = yup(extrude(oval.buffer(-0.03, resolution=24), 0.03)); top.apply_translation([0, 0.085, 0])
+        flecks = []
+        for _ in range(9):
+            x, z = rng.uniform(-0.26, 0.26), rng.uniform(-0.1, 0.1)
+            d = moved(scaled(cyl(rng.uniform(0.012, 0.022), 0.006, 10), 1.6, 1, 1), x, 0.117, z)
+            flecks.append(rotated(d, rng.uniform(0, math.pi), [0, 1, 0], center=(x, 0.117, z)))
+        return body, top, trimesh.util.concatenate(flecks)
 
-    b1, s1 = patty()
-    b2, s2 = patty()
+    b1, t1, f1 = patty()
+    b2, t2, f2 = patty()
     lean = lambda m: moved(rotated(rotated(m, -0.45, [0, 0, 1]), 0.5, [0, 1, 0]), 0.08, 0.19, 0.06)
     return {'Hashbrowns': (trimesh.util.concatenate([b1, lean(b2)]), 'hash'),
-            'SoftShreds': (trimesh.util.concatenate([s1, lean(s2)]), 'hashlite')}
+            'Tops': (trimesh.util.concatenate([t1, lean(t2)]), 'hashlite'),
+            'SoftFlecks': (trimesh.util.concatenate([f1, lean(f2)]), 'toast')}
 
 
 CA = [(-124.21, 41.99), (-120.0, 41.99), (-120.0, 39.0), (-114.63, 35.0), (-114.6, 34.3), (-114.72, 32.72),
@@ -652,7 +652,13 @@ def marathon_burger(sc, part_of=lambda n: n):
     p2 = sc.idx('MB_Burger_Patty_2')
     c2 = sc.add_node(sc.parent[p2], 'MB_Burger_Cheese_2', np.eye(4), ch.mesh)
     sc.g.nodes[c2].matrix = None
-    sc.g.nodes[c2].scale, sc.g.nodes[c2].rotation = ch.scale, ch.rotation
+    q30 = [0.0, math.sin(math.radians(15)), 0.0, math.cos(math.radians(15))]          # 30 deg about Y (x, y, z, w)
+    qc = ch.rotation or [0, 0, 0, 1]
+    w1, x1, y1, z1 = q30[3], q30[0], q30[1], q30[2]; w2, x2, y2, z2 = qc[3], qc[0], qc[1], qc[2]
+    sc.g.nodes[c2].rotation = [w1*x2 + x1*w2 + y1*z2 - z1*y2, w1*y2 - x1*z2 + y1*w2 + z1*x2,
+                               w1*z2 + x1*y2 - y1*x2 + z1*w2, w1*w2 - x1*x2 - y1*y2 - z1*z2]
+    s = list(ch.scale or [1, 1, 1])
+    sc.g.nodes[c2].scale = [s[0] * 1.1, s[1], s[2] * 1.1]
 
     order = ['Burger_Patty', 'Burger_Cheese', 'MB_Burger_Patty_2', 'MB_Burger_Cheese_2', 'Burger_Onions_Top', 'Burger_Bun_Top']
     if not STACK:                         # hero burger: work out the stack once (layer y in burger-local units)
@@ -704,10 +710,23 @@ for src, new in (('Burger_Bun_Bottom', 'MB_BK_Bun_Bottom'), ('Burger_Patty', 'MB
                  ('Burger_Cheese', 'MB_BK_Cheese'), ('Burger_Bun_Top', 'MB_BK_Bun_Top')):
     s = sc.g.nodes[sc.idx(src)]
     sc.add_node(grp, new, trs_matrix(s), s.mesh)
+# restack (the burger's own bun top was raised for its double stack, so copying it left the bun floating)
+def _sety(name, y):
+    n = sc.g.nodes[sc.idx(name)]
+    M = trs_matrix(n); M[1, 3] = y
+    n.matrix = M.T.reshape(-1).tolist()
+p_lo, p_hi = yext(sc, 'Burger_Patty'); c_lo, c_hi = yext(sc, 'Burger_Cheese'); b_lo, b_hi = yext(sc, 'Burger_Bun_Top')
+y_saus = STACK['orig']['Burger_Patty']
+_sety('MB_BK_Sausage', y_saus)
+top = y_saus + p_hi
+_sety('MB_BK_Cheese', top + 0.008 - c_hi); top += 0.008
+egg_base, egg_k = top + 0.004, 0.5
 for part, (m, colour) in egg().items():
     mi = sc.mesh(m, colour, 'MB_BK_' + part)
-    T = np.diag([0.5, 0.5, 0.5, 1.0]); T[:3, 3] = [0, 0.205, 0]
+    T = np.diag([egg_k, egg_k, egg_k, 1.0]); T[:3, 3] = [0, egg_base, 0]
     sc.add_node(grp, 'MB_BK_' + part, T, mi)
+white_top = egg_base + 0.07 * egg_k
+_sety('MB_BK_Bun_Top', white_top + 0.012 - b_lo)       # top bun rests on the egg (the yolk tucks into it)
 sc.place('Pizza_French_Fries', 'Hashbrowns', hashbrowns(), sc.pivot('Pizza_French_Fries', spots['Pizza_French_Fries'][0]), 0, yaw=0.6,
          width=spots['Burger'][1][0] * 0.8)
 sc.place('Coffee', 'Coffee', coffee_cup(), sc.pivot('Coffee', spots['Coffee'][0]), burger_h * 1.2)

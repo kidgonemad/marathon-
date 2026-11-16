@@ -46,8 +46,7 @@
   const MUSIC = '/marathon-/live/media/sounds/marathon-music-2.mp3';
   const readPref = () => { try { return JSON.parse(localStorage.getItem('audio') || '{}').isAudioEnabled !== false; } catch (e) { return true; } };
   const savePref = on => { try { localStorage.setItem('audio', JSON.stringify({ isAudioEnabled: on })); } catch (e) { /* private mode */ } };
-  let audioOn = readPref(), ctx = null, riveSound = null;
-  const ensureCtx = () => { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); return ctx; };
+  let audioOn = readPref(), riveSound = null;
   const WAVES = { on: ['M 33 16 Q 37 20 33 24', 'M 37 13 Q 44 20 37 27'], off: ['M 33 16.5 Q 36.5 20 40 23.5', 'M 40 16.5 Q 36.5 20 33 23.5'] };
   function showSound() {
     header.querySelectorAll('.the-sound-switcher-mobile').forEach(btn => {
@@ -60,14 +59,14 @@
   function setAudio(on) {
     audioOn = on; savePref(on); showSound();
     if (!window.MBMusic) return;
-    if (on) { ensureCtx(); window.MBMusic.unlock(ctx, MUSIC); window.MBMusic.start(ctx, MUSIC, 1.5); }
+    if (on) { window.MBMusic.unlock(MUSIC); window.MBMusic.start(MUSIC, 1.5); }
     else window.MBMusic.stop(1);
   }
   // browsers only allow sound after a tap: start the music on the first tap anywhere if sound is on
   const firstTap = e => {
     if (e.target.closest && e.target.closest('.the-sound-switcher, .the-sound-switcher-mobile')) return;   // the switch handles itself
     window.removeEventListener('pointerdown', firstTap, true);
-    if (audioOn && window.MBMusic) { ensureCtx(); window.MBMusic.unlock(ctx, MUSIC); window.MBMusic.start(ctx, MUSIC, 1.5); }
+    if (audioOn && window.MBMusic) { window.MBMusic.unlock(MUSIC); window.MBMusic.start(MUSIC, 1.5); }
   };
   window.addEventListener('pointerdown', firstTap, true);
   header.querySelectorAll('.the-sound-switcher-mobile').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); setAudio(!audioOn); }));

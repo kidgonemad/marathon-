@@ -278,7 +278,9 @@ open(html_path, 'w', encoding='utf-8').write(H)
 for f in glob.glob(rel('content/three/*.glb')):
     shutil.copy(f, os.path.join(dist, 'three', os.path.basename(f)))
 if os.path.exists(rel('content/media/ambient.mp3')):     # site music (looped by the site's audio manager)
-    shutil.copy(rel('content/media/ambient.mp3'), os.path.join(dist, 'media', 'sounds', 'ambient.mp3'))
+    # served under a new name (see js_swaps) so browsers can't keep playing a cached copy of the old track
+    for name in ('ambient.mp3', 'marathon-music.mp3'):
+        shutil.copy(rel('content/media/ambient.mp3'), os.path.join(dist, 'media', 'sounds', name))
 for f in glob.glob(rel('content/lottie/*.json')):     # badges, built by tools/badges.py
     shutil.copy(f, os.path.join(dist, 'lottie', os.path.basename(f)))
 
@@ -399,6 +401,7 @@ js_swaps = [
      'autoplay:!0,onLoad:()=>{E.resizeDrawingSurfaceToCanvas(),d=E.stateMachineInputs("Loader02").find(T=>T.name==="CheckLoad")}})',
      'E=window.MarathonLogo.mount(o.value),d=E.loadInput'),
     ('"Click | Planetoño logo"', '"Click | Logo"'),
+    ('ambient:`${BASE_URL}/ambient.mp3`', 'ambient:`${BASE_URL}/marathon-music.mp3`'),   # new site music
     # footer credit links to 33rd Creative (the logo itself is drawn/animated by /brand/studio.js)
     ('section-contacts__logo",href:"https://tubikstudio.com/"', 'section-contacts__logo",href:"https://33rdcreative.com/"'),
     # New Marathon Burger 3D parts (MB_*) get the same toon shading + outlines as the original food

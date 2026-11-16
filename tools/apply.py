@@ -279,7 +279,8 @@ for f in glob.glob(rel('content/three/*.glb')):
     shutil.copy(f, os.path.join(dist, 'three', os.path.basename(f)))
 if os.path.exists(rel('content/media/marathon-music.mp3')):     # site music (looped by the site's audio manager)
     # served as marathon-music.mp3 (see js_swaps); the original Planetoño ambient track is not shipped
-    shutil.copy(rel('content/media/marathon-music.mp3'), os.path.join(dist, 'media', 'sounds', 'marathon-music.mp3'))
+    # published under a versioned name so phones can't keep playing a cached copy of an earlier song
+    shutil.copy(rel('content/media/marathon-music.mp3'), os.path.join(dist, 'media', 'sounds', 'marathon-music-2.mp3'))
 for f in glob.glob(rel('content/lottie/*.json')):     # badges, built by tools/badges.py
     shutil.copy(f, os.path.join(dist, 'lottie', os.path.basename(f)))
 
@@ -400,7 +401,7 @@ js_swaps = [
      'autoplay:!0,onLoad:()=>{E.resizeDrawingSurfaceToCanvas(),d=E.stateMachineInputs("Loader02").find(T=>T.name==="CheckLoad")}})',
      'E=window.MarathonLogo.mount(o.value),d=E.loadInput'),
     ('"Click | Planetoño logo"', '"Click | Logo"'),
-    ('ambient:`${BASE_URL}/ambient.mp3`', 'ambient:`${BASE_URL}/marathon-music.mp3`'),   # new site music
+    ('ambient:`${BASE_URL}/ambient.mp3`', 'ambient:`${BASE_URL}/marathon-music-2.mp3`'),   # site music
     # Stream the music through an <audio> element instead of downloading + decoding the whole track
     # (a 4-minute song decodes to ~90 MB of PCM: seconds of delay and stutter on phones). Same gain node,
     # so the sound switch and fades work as before; fade-in shortened from 3s to 1.5s.

@@ -40,8 +40,8 @@
         "SmAsHeD",
         "RiGhT."
       ],
-      "item": "Two smashed patties with grilled onions, Fresno peppers, house pickles, American cheese and secret sauce.",
-      "mascot": "Served with fries and a drink."
+      "item": "Two smashed wagyu patties, grilled onions, Fresno peppers, house pickles, secret sauce.",
+      "mascot": "Fries · Drink"
     },
     {
       "headline": [
@@ -50,8 +50,8 @@
         "No",
         "BrAkEs."
       ],
-      "item": "10 bone-in organic wings, served with fries and a drink.",
-      "mascot": "Sauces: Mild, Honey BBQ, Hot, Atomic Hot or Lemon Pepper."
+      "item": "10 bone-in organic wings with fries and a drink.",
+      "mascot": "Mild · Honey BBQ · Hot · Atomic Hot · Lemon Pepper"
     },
     {
       "headline": [
@@ -60,8 +60,8 @@
         "GrInD",
         "EaRlY."
       ],
-      "item": "Egg & cheese, or chicken sausage, egg & cheese, on a toasted bun.",
-      "mascot": "Add hashbrowns, Marathon Coffee or fresh squeezed OJ."
+      "item": "Fresh egg and melted cheese on a toasted bun.",
+      "mascot": "Add sausage · Hashbrowns · Coffee · OJ"
     }
   ],
   "how_it_works": {

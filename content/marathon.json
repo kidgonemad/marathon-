@@ -40,7 +40,7 @@
         "SmAsHeD",
         "RiGhT."
       ],
-      "item": "Marathon Burger combo ($20): double wagyu smash with Fresno peppers and secret sauce.",
+      "item": "The Marathon Burger combo: double wagyu smash with Fresno peppers, house pickles and secret sauce.",
       "mascot": "Fries and a drink come with every combo."
     },
     {
@@ -50,7 +50,7 @@
         "No",
         "BrAkEs."
       ],
-      "item": "Hot Wing Basket ($20): 10 bone-in organic wings with fries and a drink.",
+      "item": "Hot Wing Basket: 10 bone-in organic wings with fries and a drink.",
       "mascot": "Mild, Honey BBQ, Hot, Atomic Hot or Lemon Pepper."
     },
     {
@@ -60,7 +60,7 @@
         "GrInD",
         "EaRlY."
       ],
-      "item": "Marathon Breakfast Sandwich ($10): egg & cheese, or chicken sausage, egg & cheese.",
+      "item": "Marathon Breakfast Sandwich: egg & cheese, or chicken sausage, egg & cheese.",
       "mascot": "Add hashbrowns, coffee or fresh OJ. 7am to 12 noon."
     }
   ],
@@ -231,8 +231,8 @@
     "bubble01": {
       "small": "MARATHON BURGER",
       "big": [
-        "$20",
-        "COMBO"
+        "COMBO",
+        "MEAL"
       ]
     },
     "bubble02": {

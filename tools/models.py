@@ -81,8 +81,9 @@ def soda(liquid_top=None, band='red', lid=True):
     parts = {'Cup': (cup, 'cream'),
              'Band': (lathe([(0.0, 0.32), (0.343, 0.32), (0.38, 0.62), (0.0, 0.62)]), band)}
     if lid:
-        parts['Lid'] = (lathe([(0, 0.86), (0.43, 0.86), (0.43, 0.92), (0.30, 0.97), (0.0, 0.98)]), 'white')
-        straw_top = 0.98
+        parts['Lid'] = (lathe([(0, 0.86), (0.43, 0.86), (0.43, 0.92), (0.38, 0.93), (0.36, 0.97), (0.22, 1.0),
+                               (0.08, 1.0), (0.0, 1.0)]), 'white')
+        straw_top = 1.0
     else:
         parts['Juice'] = (lathe([(0, 0.80), (0.385, 0.80), (0.385, 0.84), (0, 0.84)]), liquid_top or 'orange')
         straw_top = 0.84
@@ -97,39 +98,67 @@ def oj():
     return p
 
 
-def wing(rng):
-    m = trimesh.creation.capsule(height=0.26, radius=0.11, count=[16, 16])
-    v = m.vertices.copy()
-    t = (v[:, 2] - v[:, 2].min()) / (np.ptp(v[:, 2]) or 1)       # 0..1 along the wing
-    k = 0.75 + 0.45 * np.sin(t * math.pi * 0.85)                   # drumette bulge
-    v[:, 0] *= k; v[:, 1] *= k * 0.85
-    v[:, 1] += 0.06 * np.sin(t * math.pi)                          # slight bend
-    m.vertices = v
+def crispy(m, amount, seed=0):
+    """Bumpy fried surface: push vertices along their normals with smooth pseudo-noise."""
+    m = m.copy(); m.merge_vertices()
+    v, n = m.vertices, m.vertex_normals
+    rng = np.random.default_rng(seed)
+    f = rng.uniform(9, 17, (3, 3)); ph = rng.uniform(0, 6.3, 3)
+    noise = sum(np.sin(v @ f[k] + ph[k]) for k in range(3)) / 3
+    m.vertices = v + n * (noise * amount)[:, None]
     return m
 
 
+def drumette(seed):
+    m = trimesh.creation.capsule(height=0.26, radius=0.11, count=[20, 20])
+    v = m.vertices.copy()
+    t = (v[:, 2] - v[:, 2].min()) / (np.ptp(v[:, 2]) or 1)
+    k = 0.55 + 0.6 * np.sin(np.clip(t, 0, 1) * math.pi * 0.8)      # thin knuckle -> fat end
+    v[:, 0] *= k; v[:, 1] *= k
+    m.vertices = v
+    return crispy(m, 0.012, seed)
+
+
+def flat(seed):
+    m = trimesh.creation.capsule(height=0.24, radius=0.1, count=[20, 20])
+    m.apply_scale([1.35, 0.55, 1.0])                                  # wide, flat wingette
+    v = m.vertices.copy(); v[:, 1] += 0.03 * np.cos(v[:, 2] * 6)       # slight twist
+    m.vertices = v
+    return crispy(m, 0.01, seed)
+
+
 def wing_basket():
-    rng = np.random.default_rng(7)
     basket = lathe([(0, 0), (0.55, 0), (0.62, 0.26), (0.66, 0.28), (0.60, 0.28), (0.53, 0.04), (0, 0.04)])
     basket.apply_scale([1.3, 1, 1])
-    paper = lathe([(0, 0.04), (0.56, 0.04), (0.62, 0.22), (0.66, 0.30), (0.58, 0.24), (0.5, 0.07), (0, 0.07)])
-    paper.apply_scale([1.25, 1, 0.95])
+    liner = lathe([(0, 0.04), (0.56, 0.04), (0.62, 0.22), (0.68, 0.32), (0.58, 0.24), (0.5, 0.07), (0, 0.07)], sections=48)
+    liner.apply_scale([1.25, 1, 0.95])
+    # red/white checked paper: split the liner into alternating wedges
+    ang = np.arctan2(liner.triangles_center[:, 2], liner.triangles_center[:, 0])
+    sector = np.floor((ang + math.pi) / (2 * math.pi / 16)).astype(int) % 2
+    red_paper = liner.submesh([np.where(sector == 0)[0]], append=True)
+    white_paper = liner.submesh([np.where(sector == 1)[0]], append=True)
     wings, bones = [], []
-    spots = [(-0.32, 0.16, -0.12, 0.3), (0.0, 0.17, -0.2, -0.4), (0.3, 0.16, -0.05, 0.9),
-             (-0.18, 0.18, 0.2, -1.2), (0.16, 0.2, 0.18, 2.0), (0.0, 0.33, 0.0, 0.6)]
-    for x, y, z, yaw in spots:
-        w = wing(rng)
+    spots = [(-0.34, 0.16, -0.1, 0.3, 'd'), (0.0, 0.15, -0.22, -0.4, 'f'), (0.32, 0.16, -0.04, 0.9, 'd'),
+             (-0.18, 0.18, 0.2, -1.2, 'f'), (0.18, 0.2, 0.18, 2.0, 'd'), (0.02, 0.3, 0.0, 0.6, 'f'),
+             (-0.02, 0.34, -0.14, 2.6, 'd')]
+    for k, (x, y, z, yaw, kind) in enumerate(spots):
+        w = drumette(k) if kind == 'd' else flat(k)
         tip = w.vertices[:, 2].min()
-        bone = trimesh.util.concatenate([tube([0, 0, tip + 0.04], [0, 0, tip - 0.07], 0.035, 12),
-                                         moved(sphere(0.05, 2), 0, 0, tip - 0.08)])
+        parts = [w]
+        bone = trimesh.util.concatenate([tube([0, 0, tip + 0.04], [0, 0, tip - 0.06], 0.03, 12),
+                                         moved(sphere(0.045, 2), 0, 0, tip - 0.07)])
+        if kind == 'd':
+            parts.append(bone)
         out = []
-        for m in (w, bone):
+        for m in parts:
             m = rotated(m, math.pi / 2 * 0.9, [0, 1, 0])
             m = rotated(m, yaw, [0, 1, 0])
-            m = rotated(m, 0.25, [1, 0, 0])
+            m = rotated(m, 0.25 if kind == 'd' else 0.1, [1, 0, 0])
             out.append(moved(m, x, y, z))
-        wings.append(out[0]); bones.append(out[1])
-    return {'Basket': (basket, 'red'), 'Paper': (paper, 'cream'),
+        wings.append(out[0])
+        if len(out) > 1:
+            bones.append(out[1])
+    return {'Basket': (basket, 'red'), 'PaperRed': (red_paper, 'red'), 'PaperWhite': (white_paper, 'white'),
             'Wings': (trimesh.util.concatenate(wings), 'wing'), 'Bones': (trimesh.util.concatenate(bones), 'cream')}
 
 
@@ -159,13 +188,13 @@ def breakfast_sandwich():
 
 
 def hashbrowns():
-    def patty():
-        m = trimesh.creation.capsule(height=0.5, radius=0.25, count=[20, 20])
+    def patty(seed):
+        m = trimesh.creation.capsule(height=0.5, radius=0.25, count=[24, 24])
         m = rotated(m, math.pi / 2, [0, 1, 0])
         m.apply_scale([1.0, 0.36, 1.0])
-        return m
-    a = moved(rotated(patty(), 0.15, [0, 0, 1]), -0.05, 0.1, -0.18)
-    b = moved(rotated(rotated(patty(), 0.5, [0, 1, 0]), -0.35, [0, 0, 1]), 0.05, 0.22, 0.15)
+        return crispy(m, 0.014, seed)        # shredded-potato surface
+    a = moved(rotated(patty(1), 0.15, [0, 0, 1]), -0.05, 0.1, -0.18)
+    b = moved(rotated(rotated(patty(2), 0.5, [0, 1, 0]), -0.35, [0, 0, 1]), 0.05, 0.22, 0.15)
     return {'Hashbrowns': (trimesh.util.concatenate([a, b]), 'hash')}
 
 
@@ -284,7 +313,8 @@ def coffee_cup():
     """Hot Marathon Coffee: white cup, brown sleeve, sip lid."""
     return {'Cup': (lathe([(0, 0), (0.28, 0), (0.37, 0.82), (0, 0.82)]), 'white'),
             'Sleeve': (lathe([(0, 0.24), (0.318, 0.24), (0.355, 0.56), (0, 0.56)]), 'brown'),
-            'Lid': (lathe([(0, 0.8), (0.40, 0.8), (0.40, 0.87), (0.33, 0.9), (0.33, 0.95), (0, 0.97)]), 'white')}
+            'Lid': (lathe([(0, 0.8), (0.40, 0.8), (0.40, 0.87), (0.33, 0.9), (0.33, 0.95), (0, 0.97)]), 'white'),
+            'SipTab': (moved(scaled(sphere(0.06, 2), 1.4, 0.5, 0.8), 0.22, 0.95, 0), 'brown')}
 
 
 def egg():

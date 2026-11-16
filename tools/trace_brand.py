@@ -7,7 +7,7 @@ Output JSON (coordinates in source pixels, logo origin = top-left of the red box
   box: [w, h]
   letters: [{char, d, x0, x1}]   one path per MARATHON letter
   burger: {d, bbox}              the script "Burger"
-  palm:   {d, w, h}            the larger of the two palm trees
+  palm, palm_left: {d, w, h}   the big (right) and small (left) palm trees
 """
 import json, sys
 import numpy as np
@@ -65,12 +65,23 @@ burger = {'d': trace(bm, -X0, -Y0),
           'bbox': [int(bxs.min() - X0), int(bys.min() - Y0), int(bxs.max() - X0), int(bys.max() - Y0)]}
 
 p = np.asarray(Image.open(palm_path).convert('L')).astype(int)
-pm = p < 128
-pm[:, :int(pm.shape[1] * 0.42)] = False  # keep only the big palm (the icon has two trees)
-pys, pxs = np.where(pm)
-pm = pm[pys.min():pys.max() + 1, pxs.min():pxs.max() + 1]
-palm = {'d': trace(pm), 'w': int(pm.shape[1]), 'h': int(pm.shape[0])}
+split = int(p.shape[1] * 0.42)          # the icon has two trees: small one left, big one right
 
-json.dump({'box': [int(X1 - X0), int(Y1 - Y0)], 'letters': letters, 'burger': burger, 'palm': palm},
+
+def one_tree(right):
+    pm = p < 128
+    if right:
+        pm[:, :split] = False
+    else:
+        pm[:, split:] = False
+    pys, pxs = np.where(pm)
+    pm = pm[pys.min():pys.max() + 1, pxs.min():pxs.max() + 1]
+    return {'d': trace(pm), 'w': int(pm.shape[1]), 'h': int(pm.shape[0])}
+
+
+palm = one_tree(True)
+palm_left = one_tree(False)
+
+json.dump({'box': [int(X1 - X0), int(Y1 - Y0)], 'letters': letters, 'burger': burger, 'palm': palm, 'palm_left': palm_left},
           open(out_path, 'w'), indent=1)
-print('box', X1 - X0, Y1 - Y0, 'letters', len(letters), 'burger bbox', burger['bbox'], 'palm', palm['w'], palm['h'])
+print('box', X1 - X0, Y1 - Y0, 'letters', len(letters), 'palms', (palm['w'], palm['h']), (palm_left['w'], palm_left['h']))

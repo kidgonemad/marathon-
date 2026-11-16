@@ -1,5 +1,5 @@
 {
-  "_source": "Transcribed from the in-store Marathon Burger menu board (content/brand/menu-photo.jpg). 'veg' marks the leaf icon items. Combo list confirmed against @themarathonclothing's Nov 2024 combo menu post.",
+  "_source": "Transcribed from the in-store Marathon Burger menu board (content/brand/menu-photo.jpg). 'veg' marks the leaf icon items. Combo list confirmed against @themarathonclothing's Nov 2024 combo menu post. Missing descriptions filled from public listings and reviews (Uber Eats, DoorDash, Yelp, California Eating).",
   "sections": [
     {
       "title": "BuRgErS",
@@ -106,11 +106,13 @@
       "items": [
         {
           "name": "French Fries",
-          "price": "$4.95"
+          "price": "$4.95",
+          "desc": "Golden, crispy fries."
         },
         {
           "name": "Onion Rings",
-          "price": "$4.95"
+          "price": "$4.95",
+          "desc": "Crispy, golden onion rings."
         },
         {
           "name": "Homemade Biscuits",
@@ -178,20 +180,22 @@
         {
           "name": "Marathon Breakfast Sandwich",
           "price": "$10",
-          "desc": "Egg & cheese, or chicken sausage, egg & cheese."
+          "desc": "Egg & cheese, or chicken sausage, egg & cheese, on a toasted bun."
         },
         {
           "name": "Marathon French Toast Waffle",
           "price": "$10",
-          "desc": "French toast made the Marathon way."
+          "desc": "French toast, made the Marathon way."
         },
         {
           "name": "Marathon Hashbrowns",
-          "price": "$3.50"
+          "price": "$3.50",
+          "desc": "Golden, crispy hashbrowns."
         },
         {
           "name": "Marathon Coffee",
-          "price": "$3.50"
+          "price": "$3.50",
+          "desc": "Fresh, hot coffee."
         },
         {
           "name": "Fresh Squeezed OJ",
@@ -225,7 +229,8 @@
       "items": [
         {
           "name": "Cream Cheese Pound Cake",
-          "price": "$5"
+          "price": "$5",
+          "desc": "A thick slice of house-made cream cheese pound cake."
         }
       ]
     }

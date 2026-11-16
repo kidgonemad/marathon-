@@ -250,7 +250,7 @@ stepper_cfg = {'steps': C['how_it_works']['steps'], 'final': C['how_it_works']['
 head += ('<link rel="stylesheet" href="/brand/logo.css"><link rel="stylesheet" href="/brand/stepper.css">'
          '<script src="/brand/logo-data.js"></script><script src="/brand/logo.js"></script>'
          '<script>window.MARATHON_STEPPER=' + json.dumps(stepper_cfg, ensure_ascii=False) + '</script>'
-         '<script src="/brand/stepper.js"></script>' + studio_logo_css)
+         '<script src="/brand/stepper.js"></script><script src="/brand/palms.js"></script>' + studio_logo_css)
 H = head + body
 open(html_path, 'w', encoding='utf-8').write(H)
 
@@ -316,18 +316,19 @@ open(riv_path, 'wb').write(riv)
 # ---------------------------------------------------------------- sparkles -> palm tree
 # The ✦ decoration ("Star" component) is a black shadow path + cream outlined path in a 46x51 box.
 # Swap both for the Marathon palm, keeping the same shadow offset and outline.
+# Both trees from the icon are used: decorations alternate between the right (big) and left (small) one.
 palm = traced['palm']
 
 
-def palm_path(dx, dy):
-    k = 44.0 / palm['h']
-    ox = (46 - palm['w'] * k) / 2 - 1.5 + dx
-    nums = iter(re.findall(r'-?\d+(?:\.\d+)?', palm['d']))
+def palm_path(dx, dy, tree=None):
+    tree = tree or palm
+    k = 44.0 / tree['h']
+    ox = (46 - tree['w'] * k) / 2 - 1.5 + dx
     def fix(m):
         x = float(m.group(1)) * k + ox
         y = float(m.group(2)) * k + 2 + dy
         return f'{x:.2f} {y:.2f}'
-    return re.sub(r'(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)', fix, palm['d'])
+    return re.sub(r'(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)', fix, tree['d'])
 
 
 entry_js = os.path.join(dist, '_nuxt', 'CJbJqNFW.js')
@@ -335,6 +336,15 @@ ejs = open(entry_js, encoding='utf-8').read()
 star_shadow = re.search(r'createBaseVNode\("path",\{d:"(M21\.8002[^"]*)"', ejs).group(1)
 star_main = re.search(r'createBaseVNode\("path",\{d:"(M18\.2466[^"]*)"', ejs).group(1)
 palm_shadow, palm_main = palm_path(2.2, 2.8), palm_path(0, 0)
+left_shadow, left_main = palm_path(2.2, 2.8, traced['palm_left']), palm_path(0, 0, traced['palm_left'])
+# every other decoration shows the left tree (set in the browser by /brand/palms.js)
+open(os.path.join(dist, 'brand', 'palms.js'), 'w', encoding='utf-8').write(
+    '(function(){var L=' + json.dumps([left_shadow, left_main]) + ';var n=0;'
+    'function run(){document.querySelectorAll("svg.star:not([data-palm])").forEach(function(s){'
+    's.setAttribute("data-palm",n%2?"left":"right");if(n++%2){var p=s.querySelectorAll("path");'
+    'if(p.length>1){p[0].setAttribute("d",L[0]);p[1].setAttribute("d",L[1]);}}});}'
+    'new MutationObserver(run).observe(document.documentElement,{childList:true,subtree:true});'
+    'document.addEventListener("DOMContentLoaded",run);})();\n')
 for f in (entry_js, html_path):
     s = open(f, encoding='utf-8').read()
     s = s.replace(star_shadow, palm_shadow).replace(star_main, palm_main)
@@ -418,8 +428,10 @@ for sec in M['sections']:
     secs.append(f'<section id="{sid}"><h2>{esc(sec["title"])}</h2>{note}<ul>{"".join(items)}</ul></section>')
 palm_svg = (f'<svg viewBox="0 0 46 51" xmlns="http://www.w3.org/2000/svg"><path d="{palm_shadow}" fill="#000"/>'
             f'<path d="{palm_main}" fill="#F7F2E5" stroke="#000" stroke-width="1"/></svg>')
-palms = ''.join(f'<div class="palm" style="left:{x}%;top:{y}%;animation-delay:{d}s">{palm_svg}</div>'
-                for x, y, d in ((10, 12, 0), (86, 18, .8), (20, 46, 1.6), (76, 44, 2.2)))
+left_svg = (f'<svg viewBox="0 0 46 51" xmlns="http://www.w3.org/2000/svg"><path d="{left_shadow}" fill="#000"/>'
+            f'<path d="{left_main}" fill="#F7F2E5" stroke="#000" stroke-width="1"/></svg>')
+palms = ''.join(f'<div class="palm" style="left:{x}%;top:{y}%;animation-delay:{d}s">{left_svg if i % 2 else palm_svg}</div>'
+                for i, (x, y, d) in enumerate( ((10, 12, 0), (86, 18, .8), (20, 46, 1.6), (76, 44, 2.2))))
 page = open(rel('content/brand/menu.html'), encoding='utf-8').read()
 for k, v in {'NAME': esc(brand['name']), 'EMAIL': esc(brand['email']), 'SECTIONS': '\n'.join(secs),
              'CHIPS': ''.join(chips), 'PALMS': palms, 'FOOTNOTE': esc(M.get('footnote', ''))}.items():

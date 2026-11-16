@@ -35,6 +35,12 @@ maps, the sounds and the custom cursor. Everything brand-specific is now Maratho
 | `tools/` | Build scripts |
 | `dist/` | **The finished site. Host this folder.** |
 
+## Live version (GitHub Pages)
+
+Every push to the branch rebuilds the site and publishes it at **https://kidgonemad.github.io/marathon-/**
+(`.github/workflows/pages.yml`). One-time setup: repo **Settings → Pages → Build and deployment → Source:
+GitHub Actions**, then re-run the "Deploy site to GitHub Pages" workflow from the Actions tab.
+
 ## Edit and rebuild
 
 ```

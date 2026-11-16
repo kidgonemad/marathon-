@@ -67,14 +67,15 @@
     // Loader: palm row centred where the wordmark sits
     const loader = el('g', { class: 'mb-logo__loader' }, svg);
     const palms = [];
-    const count = 5, ph = H * 1.25;
-    const scale = ph / D.palm.h, pw = D.palm.w * scale, gap = 70;
+    const count = 5, ph = H * 1.25, trees = [D.palm, D.palm_left || D.palm];   // alternate both palm trees
+    const pw = D.palm.w * ph / D.palm.h, gap = 70;
     const startX = W / 2 - (count * pw + (count - 1) * gap) / 2;
     for (let i = 0; i < count; i++) {
-      const outer = el('g', { transform: `translate(${startX + i * (pw + gap)} ${H / 2 - (D.palm.h * scale) / 2})` }, loader);
+      const tree = trees[i % 2], scale = ph / tree.h;
+      const outer = el('g', { transform: `translate(${startX + i * (pw + gap) + (pw - tree.w * scale) / 2} ${H / 2 - ph / 2})` }, loader);
       const pop = el('g', { class: 'mb-logo__palm' }, outer);  // animated wrapper (no transform attribute)
       const g = el('g', { transform: `scale(${scale})` }, pop);
-      cartoon(g, D.palm.d, D.colors.letters, { flat: false, stroke: 14 / scale, shadow: 14 / scale });
+      cartoon(g, tree.d, D.colors.letters, { flat: false, stroke: 14 / scale, shadow: 14 / scale });
       palms.push(pop);
     }
     root.appendChild(svg);

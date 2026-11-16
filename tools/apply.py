@@ -238,47 +238,68 @@ for old, new in text_swaps:
 body = body.replace('mail@tubikstudio.com', html.escape(brand['email']))
 body = body.replace('alt="Planetoño"', 'alt="' + html.escape(brand['name']) + '"')
 
-# Logo: cover the animated Rive "Planetoño" logo with the Marathon logo
-studio_logo_css = '' if C['footer'].get('show_studio_logo', True) else '.section-contacts__logo{display:none!important}'
-brand_css = f'''<style id="marathon-brand">
-.the-preloader__logo{{visibility:hidden!important}}
-:has(> canvas.the-preloader__logo){{position:relative}}
-:has(> canvas.the-preloader__logo)::after{{content:"";position:absolute;left:50%;top:50%;
-  width:min(300px,100%);aspect-ratio:600/170;transform:translate(-50%,-50%);
-  background:url(/images/logo.svg) center/contain no-repeat;pointer-events:none}}
-{studio_logo_css}
-</style>'''
-head = head + brand_css
+# Logo: the Rive "loader_animation" canvas is replaced by a <div> that /brand/logo.js fills
+# (see the js_swaps below for the matching bundle patch).
+body = re.sub(r'<canvas class="the-preloader__logo"([^>]*?)(?: width="\d+" height="\d+")?([^>]*)></canvas>',
+              r'<div class="the-preloader__logo"\1\2></div>', body)
+studio_logo_css = '' if C['footer'].get('show_studio_logo', True) else '<style>.section-contacts__logo{display:none!important}</style>'
+body = re.sub(r'<canvas class="stepper__rive"([^>]*?) width="\d+" height="\d+"([^>]*)></canvas>',
+              r'<div class="stepper__rive"\1\2></div>', body)
+stepper_cfg = {'steps': C['how_it_works']['steps'], 'final': C['how_it_works']['final_step']}
+head += ('<link rel="stylesheet" href="/brand/logo.css"><link rel="stylesheet" href="/brand/stepper.css">'
+         '<script src="/brand/logo-data.js"></script><script src="/brand/logo.js"></script>'
+         '<script>window.MARATHON_STEPPER=' + json.dumps(stepper_cfg, ensure_ascii=False) + '</script>'
+         '<script src="/brand/stepper.js"></script>' + studio_logo_css)
 H = head + body
 open(html_path, 'w', encoding='utf-8').write(H)
+
+# ---------------------------------------------------------------- 3D models (built by tools/models.py)
+for f in glob.glob(rel('content/three/*.glb')):
+    shutil.copy(f, os.path.join(dist, 'three', os.path.basename(f)))
+for f in glob.glob(rel('content/lottie/*.json')):     # badges, built by tools/badges.py
+    shutil.copy(f, os.path.join(dist, 'lottie', os.path.basename(f)))
 
 # ---------------------------------------------------------------- brand files
 os.makedirs(os.path.join(dist, 'brand'), exist_ok=True)
 shutil.copy(rel(brand['favicon']), os.path.join(dist, 'brand', 'favicon.svg'))
 if brand.get('og_image'):
     shutil.copy(rel(brand['og_image']), os.path.join(dist, 'brand', os.path.basename(brand['og_image'])))
+for f in ('logo.js', 'logo.css', 'stepper.js', 'stepper.css'):
+    shutil.copy(rel(os.path.join('content', 'brand', f)), os.path.join(dist, 'brand', f))
 
+traced = json.load(open(rel('content/brand/traced.json'), encoding='utf-8'))
+flat = brand.get('logo_style') == 'flat'
+logo_colors = ({'box': '#e31e26', 'letters': '#ffffff', 'burger': '#000000'} if flat else
+               {'box': '#e31e26', 'letters': '#f7f2e5', 'burger': '#ffc737'})
+logo_data = dict(traced, name=brand['name'], style='flat' if flat else 'cartoon', colors=logo_colors,
+                 sound='/media/sounds/hover.mp3')
+open(os.path.join(dist, 'brand', 'logo-data.js'), 'w', encoding='utf-8').write(
+    'window.MARATHON_LOGO_DATA=' + json.dumps(logo_data, ensure_ascii=False) + ';\n')
+
+# Static logo (used by the header's TheLogo image) built from the same traced paths
+W, Hh = traced['box']; bb = traced['burger']['bbox']
+
+
+def static_shape(d, fill, stroke, shadow):
+    if flat:
+        return f'<path d="{d}" fill="{fill}"/>'
+    return (f'<path d="{d}" fill="#000" stroke="#000" stroke-width="{stroke}" stroke-linejoin="round" transform="translate(0 {shadow})"/>'
+            f'<path d="{d}" fill="{fill}" stroke="#000" stroke-width="{stroke}" stroke-linejoin="round" paint-order="stroke"/>')
+
+
+svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -40 {W + 80} {bb[3] + 80}">'
+       + static_shape(f'M0 0H{W}V{Hh}H0Z', logo_colors['box'], 22, 16)
+       + ''.join(static_shape(l['d'], logo_colors['letters'], 14, 10) for l in traced['letters'])
+       + static_shape(traced['burger']['d'], logo_colors['burger'], 16, 10) + '</svg>')
 logo_out = os.path.join(dist, 'images', 'logo.svg')
 if brand.get('logo_image'):
     shutil.copy(rel(brand['logo_image']), logo_out)
 else:
-    font = base64.b64encode(open(os.path.join(site, 'fonts', 'passata.woff2'), 'rb').read()).decode()
-    word = html.escape(brand.get('logo_text') or brand['name'].upper())
-    t = ('x="300" y="122" text-anchor="middle" textLength="560" lengthAdjust="spacingAndGlyphs" '
-         'font-family="Passata" font-weight="700" font-size="128"')
-    open(logo_out, 'w', encoding='utf-8').write(f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 170" width="600" height="170">
-<defs><style>@font-face{{font-family:Passata;font-weight:700;src:url(data:font/woff2;base64,{font}) format("woff2")}}</style></defs>
-<text {t} transform="translate(0 9)" fill="#000" stroke="#000" stroke-width="14" stroke-linejoin="round">{word}</text>
-<text {t} fill="#f7f2e5" stroke="#000" stroke-width="10" stroke-linejoin="round" paint-order="stroke">{word}</text>
-</svg>
-''')
+    open(logo_out, 'w', encoding='utf-8').write(svg)
 
 # ---------------------------------------------------------------- Rive animation labels
-# The How-it-works step buttons and the "Email copied" toast are text runs inside the Rive
-# file. Each is stored as property 0x8c02 + a one-byte length + UTF-8 text.
-RIVE_TEXTS = list(zip(['Choose your meal', 'Pick a snack', 'Size your fries', 'Claim your toy'],
-                      C['how_it_works']['steps']))
-RIVE_TEXTS.append(('Email copied', C['ui'].get('email_copied', 'Email copied')))
+# The "Email copied" toast is a text run inside the Rive file. Each is stored as property 0x8c02 + a one-byte length + UTF-8 text.
+RIVE_TEXTS = [('Email copied', C['ui'].get('email_copied', 'Email copied'))]
 riv_path = os.path.join(dist, 'media', 'rive.riv')
 riv = open(riv_path, 'rb').read()
 for old, new in RIVE_TEXTS:
@@ -291,6 +312,37 @@ for old, new in RIVE_TEXTS:
     riv = riv.replace(tag + bytes([len(o)]) + o, tag + bytes([len(n)]) + n)
 open(riv_path, 'wb').write(riv)
 
+# ---------------------------------------------------------------- sparkles -> palm tree
+# The ✦ decoration ("Star" component) is a black shadow path + cream outlined path in a 46x51 box.
+# Swap both for the Marathon palm, keeping the same shadow offset and outline.
+palm = traced['palm']
+
+
+def palm_path(dx, dy):
+    k = 44.0 / palm['h']
+    ox = (46 - palm['w'] * k) / 2 - 1.5 + dx
+    nums = iter(re.findall(r'-?\d+(?:\.\d+)?', palm['d']))
+    def fix(m):
+        x = float(m.group(1)) * k + ox
+        y = float(m.group(2)) * k + 2 + dy
+        return f'{x:.2f} {y:.2f}'
+    return re.sub(r'(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)', fix, palm['d'])
+
+
+entry_js = os.path.join(dist, '_nuxt', 'CJbJqNFW.js')
+ejs = open(entry_js, encoding='utf-8').read()
+star_shadow = re.search(r'createBaseVNode\("path",\{d:"(M21\.8002[^"]*)"', ejs).group(1)
+star_main = re.search(r'createBaseVNode\("path",\{d:"(M18\.2466[^"]*)"', ejs).group(1)
+palm_shadow, palm_main = palm_path(2.2, 2.8), palm_path(0, 0)
+for f in (entry_js, html_path):
+    s = open(f, encoding='utf-8').read()
+    s = s.replace(star_shadow, palm_shadow).replace(star_main, palm_main)
+    # thinner outline: the star's 3px stroke swamps the palm's thin fronds
+    s = s.replace(palm_main + '",fill:"#F7F2E5",stroke:"black","stroke-width":"3"',
+                  palm_main + '",fill:"#F7F2E5",stroke:"black","stroke-width":"1"')
+    s = re.sub('(' + re.escape(palm_main) + r'" fill="#F7F2E5" stroke="black" stroke-width=")3(")', r'\g<1>1\2', s)
+    open(f, 'w', encoding='utf-8').write(s)
+
 # ---------------------------------------------------------------- scripts and colours
 ui = C['ui']
 js_swaps = [
@@ -300,7 +352,33 @@ js_swaps = [
     ('createTextVNode("StArt"', 'createTextVNode(' + json.dumps(ui['start_button'], ensure_ascii=False)),
     ('"Immersive sound ahead. Use headphones for best effect"', json.dumps(ui['sound_message'], ensure_ascii=False)),
     ('text:"Contact"', 'text:' + json.dumps(ui['contact_label'], ensure_ascii=False)),
+    # Replace the Rive logo with the Marathon Burger logo component (/brand/logo.js)
+    ('createBaseVNode("canvas",{class:"the-preloader__logo",ref:"logo",onClick:y},null,512)',
+     'createBaseVNode("div",{class:"the-preloader__logo",ref:"logo",onClick:y},null,512)'),
+    ('E=new riveExports.Rive({canvas:o.value,riveFile:e.$riveFile,artboard:"loader_animation",stateMachines:"Loader02",'
+     'autoplay:!0,onLoad:()=>{E.resizeDrawingSurfaceToCanvas(),d=E.stateMachineInputs("Loader02").find(T=>T.name==="CheckLoad")}})',
+     'E=window.MarathonLogo.mount(o.value),d=E.loadInput'),
+    ('"Click | Planetoño logo"', '"Click | Logo"'),
+    # New Marathon Burger 3D parts (MB_*) get the same toon shading + outlines as the original food
+    ('get(e){const t=this.params[e];return{...this.defaultParams,...t||{}}}',
+     'get(e){const t=this.params[e]||(e&&e.startsWith("MB_")?{toonShadingEnabled:!0,geometryEnabled:!0,'
+     'conditionalGeometryEnabled:!0}:void 0);return{...this.defaultParams,...t||{}}}'),
+    ('function gi(a){const e=a.material.color||0', 'function gi(a){if(!a.material)return;const e=a.material.color||0'),
+    # The 3D scenes waited for a hard-coded number of outlined meshes (100 / 30); count the real ones
+    ('_addConditionalGeometry(e,t){e.isMesh&&(Ie.generate(e.geometry,t)',
+     '_addConditionalGeometry(e,t){e.isMesh&&(this.conditionalGeometryCalls=(this.conditionalGeometryCalls||0)+1,Ie.generate(e.geometry,t)'),
+    ('this.conditionalGeometryLoaded>=this.conditionalGeometryCount&&',
+     'this.conditionalGeometryLoaded>=this.conditionalGeometryCalls&&'),
+    # How-it-works stepper: Rive artboard -> /brand/stepper.js (3 steps + "Claim your meal")
+    ('const e=new R.Rive({canvas:d.value,riveFile:s.$riveFile,artboard:"stepper_animation_reworked",stateMachines:"State Machine",'
+     'autoplay:!0,autoBind:!0,onLoad:()=>{let r=e.viewModelInstance;r.boolean("isHovered").on(n=>{v.value=n}),f=r.number("id"),'
+     'f.on(n=>{c.value=n}),e.resizeDrawingSurfaceToCanvas(window.devicePixelRatio+1)}});window.addEventListener("resize",()=>'
+     '{e.resizeDrawingSurfaceToCanvas(window.devicePixelRatio+1)})',
+     'f=window.MarathonStepper.mount(d.value,{onHover:n=>{v.value=n},onChange:n=>{c.value=n}}).id'),
+    ('_("canvas",{class:D(["stepper__rive",{"is-hovered":I(v)}]),ref:"canvas"},null,2)',
+     '_("div",{class:D(["stepper__rive",{"is-hovered":I(v)}]),ref:"canvas"},null,2)'),
 ]
+REQUIRED_JS = [a for a, _ in js_swaps[-9:]]
 colors = {k.lower(): v for k, v in C['colors'].items() if k.startswith('#') and k.lower() != v.lower()}
 color_re = re.compile('|'.join(re.escape(k) for k in colors) + r'(?![0-9a-fA-F])', re.I) if colors else None
 
@@ -316,5 +394,36 @@ for path in glob.glob(os.path.join(dist, '**', '*'), recursive=True):
         new = color_re.sub(lambda m: colors[m.group(0).lower()], new)
     if new != s:
         open(path, 'w', encoding='utf-8').write(new)
+    if path.endswith('.js'):
+        REQUIRED_JS = [a for a in REQUIRED_JS if a not in s]
+if REQUIRED_JS:
+    sys.exit('bundle patch target not found: ' + REQUIRED_JS[0][:80])
+
+# ---------------------------------------------------------------- menu page (/menu/)
+M = json.load(open(rel('content/menu.json'), encoding='utf-8'))
+esc = lambda s: html.escape(s, quote=True)
+slug = lambda s: re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
+secs, chips = [], []
+for sec in M['sections']:
+    sid = slug(sec['title'])
+    chips.append(f'<a class="chip" href="#{sid}">{esc(sec["title"].title())}</a>')
+    items = []
+    for it in sec['items']:
+        veg = '<span class="veg">VEG</span>' if it.get('veg') else ''
+        desc = f'<p class="desc">{esc(it["desc"])}</p>' if it.get('desc') else ''
+        items.append(f'<li><div class="row"><span class="name">{esc(it["name"])}{veg}</span>'
+                     f'<span class="price">{esc(it["price"])}</span></div>{desc}</li>')
+    note = f'<p class="note">{esc(sec["note"])}</p>' if sec.get('note') else ''
+    secs.append(f'<section id="{sid}"><h2>{esc(sec["title"])}</h2>{note}<ul>{"".join(items)}</ul></section>')
+palm_svg = (f'<svg viewBox="0 0 46 51" xmlns="http://www.w3.org/2000/svg"><path d="{palm_shadow}" fill="#000"/>'
+            f'<path d="{palm_main}" fill="#F7F2E5" stroke="#000" stroke-width="1"/></svg>')
+palms = ''.join(f'<div class="palm" style="left:{x}%;top:{y}%;animation-delay:{d}s">{palm_svg}</div>'
+                for x, y, d in ((10, 12, 0), (86, 18, .8), (20, 46, 1.6), (76, 44, 2.2)))
+page = open(rel('content/brand/menu.html'), encoding='utf-8').read()
+for k, v in {'NAME': esc(brand['name']), 'EMAIL': esc(brand['email']), 'SECTIONS': '\n'.join(secs),
+             'CHIPS': ''.join(chips), 'PALMS': palms, 'FOOTNOTE': esc(M.get('footnote', ''))}.items():
+    page = page.replace('{{' + k + '}}', v)
+os.makedirs(os.path.join(dist, 'menu'), exist_ok=True)
+open(os.path.join(dist, 'menu', 'index.html'), 'w', encoding='utf-8').write(page)
 
 print(f'built {os.path.relpath(dist, ROOT)}/ for "{brand["name"]}": {len(text_swaps)} text changes')

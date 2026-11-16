@@ -1,0 +1,7 @@
+/* Marathon Burger logo (replaces the Rive canvas). Sized like the original 350x175 canvas. */
+.the-preloader__logo.mb-logo { aspect-ratio: 2 / 1; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.mb-logo__svg { width: 92%; height: auto; overflow: visible; display: block; }
+.mb-logo__svg g { transform-box: fill-box; }
+.mb-logo__letter { transform-origin: 50% 100%; }
+.mb-logo__box, .mb-logo__burger, .mb-logo__palm, .mb-logo__loader, .mb-logo__word { transform-origin: 50% 50%; }
+.mb-logo__svg { transform-origin: 50% 60%; }

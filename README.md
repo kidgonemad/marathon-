@@ -1,66 +1,67 @@
-# Marathon
+# Marathon Burger
 
-The Marathon site, built on the Planetoño site (planetono.space by Tubik Studio) with permission.
-It keeps the original's 3D food trays, star maps, Rive animations, sounds and custom cursor,
-and swaps in Marathon's name, logo and copy.
+The Marathon Burger website, built on the Planetoño site (planetono.space by Tubik Studio, used with permission).
+Design by 33rdcreative.
+
+It keeps the original's look and motion: the intro and START screen, the 3D trays, the scroll-built meal, the star
+maps, the sounds and the custom cursor. Everything brand-specific is now Marathon Burger:
+
+- **Logo.** The real Marathon Burger logo (red MARATHON box with the "Burger" script), traced to vectors.
+  It is rebuilt in code with the original's intro (palm-tree loader, then the logo pops in, the letters wave and
+  "Burger" pops in) and its per-letter hover lift on desktop. The Rive logo is removed, not covered.
+- **3D trays.**
+  1. $20 combo: double wagyu burger, fries and a drink.
+  2. Hot Wing Basket: wings with fries and a drink.
+  3. Breakfast: breakfast sandwich, hashbrowns, coffee and fresh OJ.
+
+  The cat, chick, koala, donut, hot dog, pizza and ice cream are gone. New models use the site's own toon shading
+  and black outlines.
+- **How it works.** 3 steps (burger, drink, fries), ending with the meal box and "Claim your meal".
+  The planets and stars are now a California state shape, a bike, a skateboard and palm trees.
+- **Badges** on each slide: $20 COMBO, HOT WING BASKET and MARATHON BREAKFAST.
+- **Decorations.** The ✦ sparkles are now the palm tree.
+- **Locations.** The 5 real locations on the star maps.
+- **Menu page** at `/menu/`, with the full menu.
 
 ## Folders
 
 | Folder | What it is |
 |---|---|
 | `site/` | The original Planetoño build, made runnable offline. Don't edit by hand. |
-| `content/marathon.json` | **Every editable slot on the page.** Edit this file. |
-| `content/brand/` | Marathon brand files (favicon; add a logo or share image here). |
-| `tools/` | Scripts that extract, localise and rebrand the site. |
-| `dist/` | The finished Marathon site. Host this folder. |
+| `content/marathon.json` | Home page copy: brand, nav, hero slides, badges, how-it-works, locations, footer, colours |
+| `content/menu.json` | The menu page (sections, items, prices, descriptions) |
+| `content/brand/` | Logo source and traced paths, palm, logo/stepper code, menu page template |
+| `content/three/`, `content/lottie/` | Generated 3D models and badge animations (from the tools below) |
+| `tools/` | Build scripts |
+| `dist/` | **The finished site. Host this folder.** |
 
-## Change the content
-
-1. Edit `content/marathon.json`.
-2. Rebuild: `python3 -I tools/apply.py`
-3. Preview: `python3 -m http.server -d dist 8080`, then open http://localhost:8080
-   (it has to be served over http; opening the file directly won't work).
-
-### What you can change in `content/marathon.json`
-
-| Section | Slots |
-|---|---|
-| `brand` | Name, meta description, author, site URL, contact email, logo (`logo_image` for your own SVG/PNG, or `logo_text` for a wordmark in the site font), favicon, share image |
-| `nav` | Menu labels and links (How it works, Locations) |
-| `ui` | START button, headphones message, "Contact" label, "Email copied" message |
-| `hero_items` | 3 slides: headline lines, item description, mascot line. Must stay at 3, one per 3D tray. |
-| `how_it_works` | Label, 3 title lines, caption, the 4 step buttons (stored inside the Rive file) |
-| `locations` | Title, caption, and the pins on each star map: name, x/y position (%), popup side, detail rows. You can add or remove pins. |
-| `footer` | Headline lines (with links), left and right notes, Tubik logo on or off |
-| `colors` | Swap any of the 6 brand colors everywhere |
-
-Mixed CaPiTaLs in headlines are intentional: the Futura Passata font draws upper and lower case letters in different styles.
-
-### Current Marathon copy
-
-All text slots now hold Marathon copy: runner-themed taglines, items, mascots (Pace Cat,
-Cluck Sprint, Koala Kilometre), how-it-works steps, mile-marker locations and the footer.
-The Tubik credit and logo are removed. The font credit to AlfaType Studio stays because the
-font is licensed. The email `hello@marathon.example` and the site URL are placeholders.
-
-### Baked into artwork (can't be changed from the JSON)
-
-- The 3D food trays, mascots and the **"GALAXY BITE / 銀河バイト"** badge are 3D models (`site/three/*.glb`).
-- The nav buttons and "Sound on" switch are Rive animations (`site/media/rive.riv`); their labels come from the JSON, but their look is set in the Rive file.
-- The star-map artwork (`site/media/*.avif`, `site/lottie/*.json`), sounds (`site/media/sounds/`), cursor and map pins (`site/images/`).
-
-To change these, replace the file at the same path in `site/` and rebuild.
-
-## Rebuilding `site/` from scratch
-
-Run this only if you have a new archive:
+## Edit and rebuild
 
 ```
-python3 -I tools/extract.py <Planetono.webarchive> site   # page, styles, scripts, fonts, images
-python3 -I tools/localize.py site                          # 3D models, Rive, sounds, Lottie files from the live site
-node tools/fetch_missing.js site http://localhost:8081/    # optional: catches anything else (serve site/ on :8081 first)
-mkdir -p site/vendor/rive && npm pack @rive-app/canvas@2.32.2 && tar xzf rive-app-canvas-2.32.2.tgz && cp package/rive*.wasm site/vendor/rive/
+python3 -I tools/apply.py                      # rebuild dist/ from content/
+python3 -m http.server -d dist 8080            # preview at http://localhost:8080 (must be served, not opened as a file)
+```
+
+If you change the 3D items, badge text or logo artwork, regenerate them first. They need a few Python packages:
+
+```
+pip install pygltflib trimesh numpy shapely mapbox_earcut fonttools brotli potracer pillow
+python tools/trace_brand.py content/brand/marathon-burger-logo.webp content/brand/palm.jpg content/brand/traced.json
+python tools/models.py site content/three
+python tools/badges.py site content/marathon.json content/lottie
 python3 -I tools/apply.py
 ```
 
-`localize.py` also stops the page from re-downloading its text from Storyblok, so the Marathon text isn't overwritten.
+## Still to confirm
+
+- The contact email is a placeholder (`hello@marathon.example`). Set `brand.email` in `content/marathon.json`.
+- Menu descriptions are transcribed from the menu-board photo. Check them against the current menu.
+
+## Rebuilding `site/` from the original archive
+
+Run this only if starting over:
+
+```
+python3 -I tools/extract.py <Planetono.webarchive> site
+python3 -I tools/localize.py site     # 3D models, Rive, sounds, Lottie files from the live site
+```

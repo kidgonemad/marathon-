@@ -401,6 +401,18 @@ js_swaps = [
      'E=window.MarathonLogo.mount(o.value),d=E.loadInput'),
     ('"Click | Planetoño logo"', '"Click | Logo"'),
     ('ambient:`${BASE_URL}/ambient.mp3`', 'ambient:`${BASE_URL}/marathon-music.mp3`'),   # new site music
+    # Stream the music through an <audio> element instead of downloading + decoding the whole track
+    # (a 4-minute song decodes to ~90 MB of PCM: seconds of delay and stutter on phones). Same gain node,
+    # so the sound switch and fades work as before; fade-in shortened from 3s to 1.5s.
+    ('const n=await this._loadBuffer(e);if(!n)return;const r=this.ctx.createBufferSource();r.buffer=n,r.loop=!0;'
+     'const i=this.ctx.createGain();r.connect(i),i.connect(this.ctx.destination),i.gain.value=0,'
+     'i.gain.linearRampToValueAtTime(.5,this.ctx.currentTime+3),r.start(0),this.ambientSource=r,this.ambientGain=i,'
+     'this.currentAmbientName=e',
+     'const a=new Audio(this._resolveUrl(e));if(!a.src)return;a.loop=!0,a.preload="auto",a.crossOrigin="anonymous",'
+     'a.setAttribute("playsinline","");const r=this.ctx.createMediaElementSource(a);r.stop=()=>{a.pause(),'
+     'a.removeAttribute("src"),a.load()};const i=this.ctx.createGain();r.connect(i),i.connect(this.ctx.destination),'
+     'i.gain.value=0,i.gain.linearRampToValueAtTime(.5,this.ctx.currentTime+1.5),a.play().catch(()=>{}),'
+     'this.ambientSource=r,this.ambientGain=i,this.currentAmbientName=e'),
     # footer credit links to 33rd Creative (the logo itself is drawn/animated by /brand/studio.js)
     ('section-contacts__logo",href:"https://tubikstudio.com/"', 'section-contacts__logo",href:"https://33rdcreative.com/"'),
     # New Marathon Burger 3D parts (MB_*) get the same toon shading + outlines as the original food
@@ -422,7 +434,7 @@ js_swaps = [
     ('_("canvas",{class:D(["stepper__rive",{"is-hovered":I(v)}]),ref:"canvas"},null,2)',
      '_("div",{class:D(["stepper__rive",{"is-hovered":I(v)}]),ref:"canvas"},null,2)'),
 ]
-REQUIRED_JS = [a for a, _ in js_swaps[-9:]]
+REQUIRED_JS = [a for a, _ in js_swaps[-9:]] + [js_swaps[i][0] for i, (a, _) in enumerate(js_swaps) if a.startswith('const n=await this._loadBuffer')]
 colors = {k.lower(): v for k, v in C['colors'].items() if k.startswith('#') and k.lower() != v.lower()}
 color_re = re.compile('|'.join(re.escape(k) for k in colors) + r'(?![0-9a-fA-F])', re.I) if colors else None
 

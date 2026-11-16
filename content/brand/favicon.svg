@@ -1,1 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#eb3322"/><text x="32" y="47" text-anchor="middle" font-family="Futura,Arial Black,Arial,sans-serif" font-weight="900" font-size="40" fill="#f7f2e5" stroke="#000" stroke-width="2.5" paint-order="stroke">M</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#eb3322"/>
+  <g stroke="#000" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- bottom bun -->
+    <path d="M14 46.5h36v2.5c0 3-2.5 5.5-5.5 5.5h-25c-3 0-5.5-2.5-5.5-5.5z" fill="#f59a2c"/>
+    <!-- patty -->
+    <rect x="11.5" y="39.5" width="41" height="7.5" rx="3.75" fill="#5a2a12"/>
+    <!-- cheese, draped with two drips -->
+    <path d="M11 32.5h42v5h-6.5l-3 4.5-3-4.5h-11l-3 4.5-3-4.5H11z" fill="#ffc737"/>
+    <!-- lettuce -->
+    <path d="M10.5 30.5c2.6-2.6 5 2.4 7.6 0s5 2.4 7.6 0 5 2.4 7.6 0 5 2.4 7.6 0 5 2.4 7.6 0 3 1.4 3 1.4l-.3 1.8H10.8z" fill="#8df947"/>
+    <!-- top bun -->
+    <path d="M12 28.5C12 18.5 21 11 32 11s20 7.5 20 17.5z" fill="#f59a2c"/>
+  </g>
+  <g fill="#f7f2e5">
+    <ellipse cx="23.5" cy="19" rx="1.6" ry="1" transform="rotate(-25 23.5 19)"/>
+    <ellipse cx="32" cy="16" rx="1.6" ry="1"/>
+    <ellipse cx="40.5" cy="19" rx="1.6" ry="1" transform="rotate(25 40.5 19)"/>
+    <ellipse cx="28" cy="23" rx="1.6" ry="1" transform="rotate(-10 28 23)"/>
+    <ellipse cx="36.5" cy="23" rx="1.6" ry="1" transform="rotate(10 36.5 23)"/>
+  </g>
+</svg>

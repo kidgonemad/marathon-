@@ -66,7 +66,7 @@
 
     // Loader: palm row centred where the wordmark sits
     const loader = el('g', { class: 'mb-logo__loader' }, svg);
-    const palms = [];
+    const palms = [], palmX = [];
     const count = 5, ph = H * 1.25, trees = [D.palm, D.palm_left || D.palm];   // alternate both palm trees
     const pw = D.palm.w * ph / D.palm.h, gap = 70;
     const startX = W / 2 - (count * pw + (count - 1) * gap) / 2;
@@ -77,9 +77,10 @@
       const g = el('g', { transform: `scale(${scale})` }, pop);
       cartoon(g, tree.d, D.colors.letters, { flat: false, stroke: 14 / scale, shadow: 14 / scale });
       palms.push(pop);
+      palmX.push(startX + i * (pw + gap) + pw / 2);
     }
     root.appendChild(svg);
-    return { svg, word, box, letters, burger, loader, palms };
+    return { svg, word, box, letters, burger, loader, palms, palmX };
   }
 
   function mount(root) {
@@ -101,19 +102,25 @@
       } catch (e) { /* audio is optional */ }
     }
 
-    // Start hidden; loader palms pop in one by one and bob while the site loads
+    // Loader (matches the original's ✦ row): the palms fill up like a progress bar, each one growing from
+    // tiny to full size in turn, and twinkle (pulse + sway) while the site loads.
     for (const n of [P.word, P.burger]) n.style.opacity = 0;
-    P.palms.forEach((p, i) => {
-      p.style.opacity = 0;
-      setTimeout(() => {
-        p.style.opacity = 1;
-        anim(p, [{ transform: 'scale(0)' }, { transform: 'scale(1.15)' }, { transform: 'scale(1)' }], { duration: 420, easing: OUT });
-      }, 250 + i * 260);
-    });
-    P.loader.style.transformBox = 'fill-box';
-    P.loader.style.transformOrigin = '50% 50%';
-    const bob = anim(P.loader, [{ transform: 'translateY(0)' }, { transform: 'translateY(-14px)' }, { transform: 'translateY(0)' }],
-                     { duration: 900, iterations: Infinity, easing: 'ease-in-out', fill: 'none' });
+    const t0 = performance.now();
+    let progress = 0;
+    function tick(now) {
+      if (loaded) return;
+      const t = (now - t0) / 1000;
+      progress = reduced() ? 1 : 1 - Math.exp(-t / 1.4);           // eases towards 1 while loading
+      P.palms.forEach((p, i) => {
+        const grow = Math.max(0, Math.min(1, progress * 5.3 - i));
+        const twinkle = 1 + 0.07 * Math.sin(t * 5.5 + i * 1.7);
+        const sway = 7 * Math.sin(t * 2.8 + i * 1.1);
+        p.style.opacity = grow > 0.02 ? 1 : 0;
+        p.style.transform = `scale(${(grow * twinkle).toFixed(3)}) rotate(${sway.toFixed(2)}deg)`;
+      });
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
 
     function setLetter(i, y, s, dur, easing) {
       anim(P.letters[i], [{ transform: `translateY(${y}px) scale(${s})` }], { duration: dur, easing });
@@ -122,32 +129,37 @@
     function reveal() {
       if (loaded) return;
       loaded = true;
-      if (bob) bob.cancel();
       const fast = reduced();
-      anim(P.loader, [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.6)' }], { duration: fast ? 1 : 260, easing: 'ease-in' });
+      // left-to-right wipe: each palm spins away as the letters under it pop in
+      const W = D.box[0], WIPE = fast ? 0 : 420;
+      P.palms.forEach((p, i) => {
+        const delay = (P.palmX[i] / W) * WIPE;
+        anim(p, [{ transform: p.style.transform, opacity: 1 }, { transform: 'scale(1.2) rotate(30deg)', opacity: 1, offset: 0.3 },
+                 { transform: 'scale(0) rotate(90deg)', opacity: 0 }], { duration: fast ? 1 : 150, delay, easing: 'ease-in' });
+      });
+      P.word.style.opacity = 1;
+      anim(P.box, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1.04)', opacity: 1, offset: 0.7 }, { transform: 'scaleX(1)', opacity: 1 }],
+           { duration: fast ? 1 : WIPE + 160, easing: OUT });
+      P.letters.forEach((l, i) => {
+        const cx = (D.letters[i].x0 + D.letters[i].x1) / 2;
+        anim(l, [{ transform: 'translateY(30px) scale(0.2)', opacity: 0 }, { transform: 'translateY(-10px) scale(1.15)', opacity: 1, offset: 0.6 },
+                 { transform: 'translateY(0) scale(1)', opacity: 1 }],
+             { duration: fast ? 1 : 420, delay: fast ? 0 : 110 + (cx / W) * WIPE, easing: OUT });
+      });
+      setTimeout(() => { P.loader.style.display = 'none'; }, fast ? 0 : WIPE + 300);
+      // the wave that runs across the word once it has landed
+      if (!fast) {
+        P.letters.forEach((l, i) => setTimeout(() => {
+          anim(l, [{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-34px) scale(1.06)' }, { transform: 'translateY(0) scale(1)' }],
+               { duration: 380, easing: 'ease-in-out' });
+        }, 820 + i * 70));
+      }
       setTimeout(() => {
-        P.loader.style.display = 'none';
-        P.word.style.opacity = 1;
-        anim(P.box, [{ transform: 'scale(0.4)', opacity: 0 }, { transform: 'scale(1.08)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)', opacity: 1 }],
-             { duration: fast ? 1 : 520, easing: OUT });
-        P.letters.forEach((l, i) => {
-          anim(l, [{ transform: 'translateY(-90px) scale(0.6)', opacity: 0 }, { transform: 'translateY(0) scale(1)', opacity: 1 }],
-               { duration: fast ? 1 : 520, delay: fast ? 0 : 60 + i * 45, easing: SPRING });
-        });
-        // the wave that runs across the word once it has landed
-        if (!fast) {
-          P.letters.forEach((l, i) => setTimeout(() => {
-            anim(l, [{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-34px) scale(1.06)' }, { transform: 'translateY(0) scale(1)' }],
-                 { duration: 380, easing: 'ease-in-out' });
-          }, 700 + i * 70));
-        }
-        setTimeout(() => {
-          P.burger.style.opacity = 1;
-          anim(P.burger, [{ transform: 'scale(0) rotate(-14deg)' }, { transform: 'scale(1.18) rotate(4deg)', offset: 0.65 }, { transform: 'scale(1) rotate(0)' }],
-               { duration: fast ? 1 : 560, easing: OUT });
-        }, fast ? 0 : 1150);
-        scheduleIdle();
-      }, fast ? 0 : 220);
+        P.burger.style.opacity = 1;
+        anim(P.burger, [{ transform: 'scale(0) rotate(-14deg)' }, { transform: 'scale(1.18) rotate(4deg)', offset: 0.65 }, { transform: 'scale(1) rotate(0)' }],
+             { duration: fast ? 1 : 560, easing: OUT });
+      }, fast ? 0 : 1250);
+      scheduleIdle();
     }
 
     function scheduleIdle() {

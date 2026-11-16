@@ -457,9 +457,47 @@ left_svg = (f'<svg viewBox="0 0 46 51" xmlns="http://www.w3.org/2000/svg"><path 
             f'<path d="{left_main}" fill="#F7F2E5" stroke="#000" stroke-width="0.4"/></svg>')
 palms = ''.join(f'<div class="palm" style="left:{x}%;top:{y}%;animation-delay:{d}s">{left_svg if i % 2 else palm_svg}</div>'
                 for i, (x, y, d) in enumerate( ((10, 12, 0), (86, 18, .8), (20, 46, 1.6), (76, 44, 2.2))))
+# The menu page uses the home page's own header (same markup, styles and Rive nav), driven by
+# /brand/menu-header.js, so the desktop nav and the phone MENU dropdown are identical.
+home = open(html_path, encoding='utf-8').read()
+home_head = home[:home.index('</head>')]
+header_styles = re.sub(r'<style id="mb-boot">.*?</style>', '',
+                       ''.join(re.findall(r'<style[^>]*>.*?</style>', home_head, flags=re.S)), flags=re.S)
+hi = home.index('<header class="the-header"')
+hdr = home[hi:home.index('</header>', hi) + len('</header>')]
+
+
+def nav_items(scope):
+    out = []
+    for n in C['nav']:
+        href = '/' + n['link'] if n['link'].startswith('#') else n['link']
+        out.append(f'<a class="the-nav__item" href="{esc(href)}" data-sound-hover="hover" data-sound-click="click" '
+                   f'data-v-{scope}="" data-v-01873299=""><span class="the-nav__item__text" data-v-01873299="">'
+                   f'{esc(n["text"])}</span><canvas class="the-nav__item__rive" data-v-01873299=""></canvas></a>')
+    return ''.join(out)
+
+
+# nav links are rebuilt from the content (the saved page snapshot only had the app's first render)
+hdr = re.sub(r'(<nav class="the-nav the-header-desktop__nav --start"[^>]*>).*?(</nav>)',
+             lambda m: m.group(1) + nav_items('d87ca48c') + m.group(2), hdr, count=1, flags=re.S)
+mi = hdr.index('<div class="the-header-mobile__nav"')
+mob = hdr[mi:]
+mob = re.sub(r'<a class="the-nav__item" href=.*?</a>', '', mob, flags=re.S)
+mob = re.sub(r'(<nav class="the-nav"[^>]*>)', lambda m: m.group(1) + nav_items('3e1a866d'), mob, count=1)
+hdr = hdr[:mi] + mob
+hdr = re.sub(r'<div class="the-preloader__logo"[^>]*></div>', '', hdr)     # old logo element from the snapshot
+logo_div = '<div class="the-preloader__logo mb-hdr-logo" data-v-2fa055d1=""></div>'
+hdr = re.sub(r'(<span class="the-header-(?:desktop|mobile)__logo__inner"[^>]*>.*?)(</span>)',
+             lambda m: m.group(1) + logo_div + m.group(2), hdr, flags=re.S)
+hdr = hdr.replace('href="#hero"', 'href="/"')
+shutil.copy(rel('content/brand/menu-header.js'), os.path.join(dist, 'brand', 'menu-header.js'))
+os.makedirs(os.path.join(dist, 'vendor', 'rive'), exist_ok=True)
+shutil.copy(rel('content/brand/rive.js'), os.path.join(dist, 'vendor', 'rive', 'rive.js'))   # @rive-app/canvas 2.32.2
+
 page = open(rel('content/brand/menu.html'), encoding='utf-8').read()
 for k, v in {'NAME': esc(brand['name']), 'EMAIL': esc(brand['email']), 'SECTIONS': '\n'.join(secs),
-             'CHIPS': ''.join(chips), 'PALMS': palms, 'FOOTNOTE': esc(M.get('footnote', ''))}.items():
+             'CHIPS': ''.join(chips), 'PALMS': palms, 'FOOTNOTE': esc(M.get('footnote', '')),
+             'HEADER': hdr, 'HEADER_STYLES': header_styles}.items():
     page = page.replace('{{' + k + '}}', v)
 os.makedirs(os.path.join(dist, 'menu'), exist_ok=True)
 open(os.path.join(dist, 'menu', 'index.html'), 'w', encoding='utf-8').write(page)

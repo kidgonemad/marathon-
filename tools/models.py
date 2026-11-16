@@ -93,9 +93,8 @@ def soda(liquid_top=None, band='red', lid=True):
 
 
 def oj():
-    p = soda(liquid_top='orange', band='orange', lid=False)
-    p['Slice'] = (moved(rotated(trimesh.creation.torus(0.13, 0.035), math.pi / 2, [0, 0, 1]), 0.4, 0.88, 0), 'orange')
-    return p
+    """Fresh squeezed OJ: open cup with orange juice on top and a straw (no garnish)."""
+    return soda(liquid_top='orange', band='orange', lid=False)
 
 
 def crispy(m, amount, seed=0):

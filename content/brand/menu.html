@@ -7,9 +7,12 @@
 <meta name="description" content="The full {{NAME}} menu: burgers, $20 combos, hot wings, Marathon classics, breakfast, shakes and drinks.">
 <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg">
 <link rel="stylesheet" href="/vendor/poppins.css">
+<link rel="stylesheet" href="/_nuxt/entry.xOEq5fYY.css">
+{{HEADER_STYLES}}
 <link rel="stylesheet" href="/brand/logo.css">
 <script src="/brand/logo-data.js"></script>
 <script src="/brand/logo.js"></script>
+<script src="/vendor/rive/rive.js"></script>
 <style>
 @font-face { font-family: "Futura Passata"; font-weight: 700; font-display: swap; src: url(/fonts/passata.woff2) format("woff2"); }
 :root { --red: #eb3322; --yellow: #ffc737; --cream: #f7f2e5; --ink: #000; --purple: #7721c7; --blue: #2097cf; --green: #8df947; }
@@ -19,15 +22,11 @@ body { background: var(--yellow); color: var(--ink); font-family: Poppins, syste
 a { color: inherit; }
 .shadow-text { text-shadow: 0 .06em 0 #000; -webkit-text-stroke: 0.035em #000; paint-order: stroke fill; color: var(--cream); }
 
-header { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-  padding: 10px clamp(16px, 4vw, 48px); background: var(--yellow); border-bottom: 3px solid #000; }
-header nav { display: flex; gap: clamp(12px, 3vw, 40px); font-weight: 700; font-size: clamp(14px, 1.4vw, 18px); }
-header nav a { text-decoration: none; }
-header nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
-header nav.end { justify-content: flex-end; }
-.logo-link { display: block; width: clamp(150px, 20vw, 260px); }
-.logo-link .the-preloader__logo { position: relative; width: 100%; }
-
+/* the header is the home page's own (.the-header, fixed); keep the menu clear of it */
+body { padding-top: 7.5rem; }
+/* on the home page the header animation leaves the nav and logo shifted up by half their height; match it */
+.the-header-desktop > .the-header-desktop__nav { transform: translateY(-50%); }
+.the-header-desktop > .the-header-desktop__logo { transform: translate(-50%, -50%); }
 .hero { text-align: center; padding: clamp(40px, 8vw, 90px) 16px clamp(24px, 4vw, 40px); position: relative; }
 .hero h1 { font-family: "Futura Passata", Poppins, sans-serif; font-size: clamp(64px, 13vw, 180px); line-height: .9; }
 .hero p { margin-top: 18px; font-size: clamp(15px, 1.6vw, 20px); }
@@ -59,19 +58,8 @@ li:first-child { border-top: 0; padding-top: 0; }
 .foot strong { display: block; font-family: "Futura Passata", Poppins, sans-serif; font-size: 28px; margin-bottom: 10px; }
 .palm { position: absolute; width: 64px; height: 71px; pointer-events: none; animation: bob 3s ease-in-out infinite; }
 @keyframes bob { 50% { transform: translateY(-10px) rotate(4deg); } }
-/* phone navigation, styled like the home page's MENU button and red panel */
-.menu-btn { display: none; font-family: "Futura Passata", Poppins, sans-serif; font-size: 20px; background: var(--cream);
-  border: 3px solid #000; border-radius: 14px; box-shadow: 4px 4px 0 #000; padding: 6px 16px; cursor: pointer; }
-.mobile-nav { position: fixed; z-index: 20; left: 12px; right: 12px; top: 96px; background: var(--red); border: 3px solid #000;
-  border-radius: 28px; padding: 18px 24px; display: grid; }
-.mobile-nav[hidden] { display: none; }
-.mobile-nav a { font-weight: 700; font-size: 24px; color: var(--cream); text-decoration: none; text-align: center; padding: 16px 0;
-  border-bottom: 2px solid #000; -webkit-text-stroke: 1px #000; paint-order: stroke fill; text-shadow: 0 2px 0 #000; }
-.mobile-nav a:last-child { border-bottom: 0; }
 @media (max-width: 700px) {
-  header { grid-template-columns: 1fr auto; }
-  header nav.start, header nav.end { display: none; }
-  .menu-btn { display: block; }
+  body { padding-top: 6rem; }
   .hero .palm:nth-of-type(n+3) { display: none; }   /* keep palms off the section chips */
   main { columns: 1; }
 }
@@ -79,16 +67,7 @@ li:first-child { border-top: 0; padding-top: 0; }
 </style>
 </head>
 <body>
-<header>
-  <nav class="start"><a href="/#how">How it works</a><a href="/#locations">Locations</a></nav>
-  <a class="logo-link" href="/" aria-label="{{NAME}} home"><div class="the-preloader__logo" id="logo"></div></a>
-  <nav class="end"><a href="/">Home</a><a href="mailto:{{EMAIL}}">Contact</a></nav>
-  <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav">MENU</button>
-</header>
-<nav class="mobile-nav" id="mobile-nav" hidden>
-  <a href="/#how">How it works</a><a href="/#locations">Locations</a><a href="#top-menu">Menu</a>
-  <a href="/">Home</a><a href="mailto:{{EMAIL}}">Contact</a>
-</nav>
+{{HEADER}}
 <div class="hero" id="top-menu">
   {{PALMS}}
   <h1 class="shadow-text">MeNu</h1>
@@ -99,14 +78,7 @@ li:first-child { border-top: 0; padding-top: 0; }
 {{SECTIONS}}
 </main>
 <div class="foot"><div class="credit"><img class="studio" src="/brand/studio-logo.svg" alt="33rd Creative" width="200"></div><strong>ThE MaRaThoN CoNtiNuEs.</strong>{{FOOTNOTE}}</div>
-<script>
-  const logo = window.MarathonLogo.mount(document.getElementById('logo'));
-  logo.volume = 0;
-  setTimeout(() => { logo.loadInput.value = true; }, 250);
-  const btn = document.querySelector('.menu-btn'), panel = document.getElementById('mobile-nav');
-  const setOpen = open => { panel.hidden = !open; btn.setAttribute('aria-expanded', open); btn.textContent = open ? 'CLOSE' : 'MENU'; };
-  btn.addEventListener('click', () => setOpen(panel.hidden));
-  panel.addEventListener('click', e => { if (e.target.tagName === 'A') setOpen(false); });
-</script>
+<script src="/brand/palms.js"></script>
+<script src="/brand/menu-header.js"></script>
 </body>
 </html>

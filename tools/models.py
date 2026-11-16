@@ -449,7 +449,7 @@ class Scene:
         self.parent[i] = p
         return i
 
-    def place(self, parent_name, item_name, parts, pos, height, yaw=0.0, extra=None, width=None):
+    def place(self, parent_name, item_name, parts, pos, height, yaw=0.0, extra=None, width=None, parent_world=None):
         """Put an item (dict of parts) under parent so that its base sits at world `pos`,
         scaled to world `height`, rotated by `yaw` around world Y."""
         allv = np.vstack([m.vertices for m, _ in parts.values()])
@@ -464,13 +464,35 @@ class Scene:
         T = np.eye(4); T[:3, 3] = pos
         desired = T @ R @ S
         pidx = parent_name if isinstance(parent_name, int) else self.idx(parent_name)
-        local = np.linalg.inv(self.world(pidx)) @ desired
+        local = np.linalg.inv(parent_world if parent_world is not None else self.world(pidx)) @ desired
         # group nodes are MBG_* (no styling); meshes are MB_* (toon shading + outlines in the site code)
         grp = self.add_node(parent_name, 'MBG_' + item_name, local)
         for part, (m, colour) in parts.items():
             mi = self.mesh(m, colour, f'MB_{item_name}_{part}')
             self.add_node(grp, f'MB_{item_name}_{part}', np.eye(4), mi)
         return grp
+
+    def pivot(self, name, base):
+        """Base point under the node's own origin: the site spins items around that origin, so new items
+        centred there spin in place like the originals instead of orbiting."""
+        o = self.world(self.idx(name))[:3, 3]
+        return np.array([o[0], base[1], o[2]])
+
+    def anim_end(self, name):
+        """World matrix of a root node at the last keyframe of its animation."""
+        i = self.idx(name)
+        n = self.g.nodes[i]
+        trs = {'translation': n.translation, 'rotation': n.rotation, 'scale': n.scale}
+        blob = self.g.binary_blob()
+        for an in self.g.animations:
+            for ch in an.channels:
+                if ch.target.node == i and ch.target.path in trs:
+                    a = self.g.accessors[an.samplers[ch.sampler].output]
+                    bv = self.g.bufferViews[a.bufferView]
+                    k = {'VEC3': 3, 'VEC4': 4}[a.type]
+                    off = (bv.byteOffset or 0) + (a.byteOffset or 0)
+                    trs[ch.target.path] = np.frombuffer(blob[off:off + a.count * k * 4], np.float32).reshape(-1, k)[-1].tolist()
+        return trs_matrix(pygltflib.Node(**trs))
 
     def save(self, path):
         self.g.buffers[0].byteLength = len(self.blob)
@@ -503,7 +525,7 @@ burger_h = spots['Burger'][1][1]
 # Tray 1 — Marathon Burger combo: the original burger reskinned to the menu build, fries, drink
 for n in ('Astro_Cat', 'Donut', 'Plat_3'):   # Plat_3 was the dessert plate
     sc.hide(n)
-sc.place('Astro_Cat', 'Soda', soda(), spots['Astro_Cat'][0], burger_h * 1.55, yaw=0.4)
+sc.place('Astro_Cat', 'Soda', soda(), sc.pivot('Astro_Cat', spots['Astro_Cat'][0]), burger_h * 1.55, yaw=0.4)
 
 
 def marathon_burger(sc, part_of=lambda n: n):
@@ -527,15 +549,15 @@ marathon_burger(sc)
 # Tray 2 — Hot Wing Basket: wings, fries, drink
 for n in ('Astro_Chik', 'Hot_Dog', 'Ice_Cream'):
     sc.hide(n)
-sc.place('Hot_Dog', 'WingBasket', wing_basket(), spots['Hot_Dog'][0], 0, yaw=0.3, width=spots['Burger'][1][0] * 1.35)
-sc.place('Astro_Chik', 'Soda', soda(), spots['Astro_Chik'][0], burger_h * 1.55, yaw=-0.3)
+sc.place('Hot_Dog', 'WingBasket', wing_basket(), sc.pivot('Hot_Dog', spots['Hot_Dog'][0]), 0, yaw=0.3, width=spots['Burger'][1][0] * 1.35)
+sc.place('Astro_Chik', 'Soda', soda(), sc.pivot('Astro_Chik', spots['Astro_Chik'][0]), burger_h * 1.55, yaw=-0.3)
 
 # Tray 3 — Breakfast: Marathon Breakfast Sandwich (original brioche bun + cheese + sausage patty + egg),
 # hashbrowns, Marathon Coffee, fresh squeezed OJ
 for n in ('Astro_Koala', 'Pizza', 'Pizza_French_Fries', 'Coffee'):
     sc.hide(n)
 bw = sc.world(sc.idx('Burger'))
-shift = np.eye(4); shift[:3, 3] = spots['Pizza'][0] - spots['Burger'][0]
+shift = np.eye(4); shift[:3, 3] = sc.pivot('Pizza', spots['Pizza'][0]) - sc.pivot('Burger', spots['Burger'][0])
 grp = sc.add_node('Pizza', 'MBG_BreakfastSandwich', np.linalg.inv(sc.world(sc.idx('Pizza'))) @ shift @ bw)
 for src, new in (('Burger_Bun_Bottom', 'MB_BK_Bun_Bottom'), ('Burger_Patty', 'MB_BK_Sausage'),
                  ('Burger_Cheese', 'MB_BK_Cheese'), ('Burger_Bun_Top', 'MB_BK_Bun_Top')):
@@ -545,10 +567,10 @@ for part, (m, colour) in egg().items():
     mi = sc.mesh(m, colour, 'MB_BK_' + part)
     T = np.diag([0.5, 0.5, 0.5, 1.0]); T[:3, 3] = [0, 0.205, 0]
     sc.add_node(grp, 'MB_BK_' + part, T, mi)
-sc.place('Pizza_French_Fries', 'Hashbrowns', hashbrowns(), spots['Pizza_French_Fries'][0], 0, yaw=0.6,
+sc.place('Pizza_French_Fries', 'Hashbrowns', hashbrowns(), sc.pivot('Pizza_French_Fries', spots['Pizza_French_Fries'][0]), 0, yaw=0.6,
          width=spots['Burger'][1][0] * 0.8)
-sc.place('Coffee', 'Coffee', coffee_cup(), spots['Coffee'][0], burger_h * 1.2)
-sc.place('Astro_Koala', 'OJ', oj(), spots['Astro_Koala'][0], burger_h * 1.45)
+sc.place('Coffee', 'Coffee', coffee_cup(), sc.pivot('Coffee', spots['Coffee'][0]), burger_h * 1.2)
+sc.place('Astro_Koala', 'OJ', oj(), sc.pivot('Astro_Koala', spots['Astro_Koala'][0]), burger_h * 1.45)
 sc.save(os.path.join(out, 'slider_model.glb'))
 
 # ===================================== how-it-works scroll =================================
@@ -569,7 +591,11 @@ def put(parent, item, parts, centre, size, yaw=0.0, extra=None):
 marathon_burger(sc)
 for n in ('Donut', 'Astro_Cat', 'Planet_Empty', 'Planet_H_Empty', 'Meteor_Empty', 'Star_Empty', 'Star_2_Empty'):
     sc.hide(n)
-d = spots['Donut']; put('Donut', 'Soda', soda(), d[0], max(d[1]) * 0.9, yaw=0.3)
+# drink: placed against the Donut node's FINAL pose (it ends upright in the meal box), centred on its spin axis
+Wend = sc.anim_end('Donut')
+cup_h = 9.0
+end_base = Wend[:3, 3] + np.array([0, 0.4, 0])          # box floor is at the Donut's final height
+sc.place('Donut', 'Soda', soda(), end_base, cup_h, yaw=0.3, parent_world=Wend)
 p = spots['Planet_Empty']; put('Planet_Empty', 'California', california(), p[0], max(p[1]) * 1.15)
 p = spots['Planet_H_Empty']; put('Planet_H_Empty', 'Bike', bike(), p[0], max(p[1]) * 0.75, yaw=-0.5)
 p = spots['Meteor_Empty']; put('Meteor_Empty', 'Skateboard', skateboard(), p[0], max(p[1]) * 0.45, yaw=0.6,

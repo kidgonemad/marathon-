@@ -248,9 +248,15 @@ body = re.sub(r'<canvas class="the-preloader__logo"([^>]*?)(?: width="\d+" heigh
 body = re.sub(r'(<div class="decoration-bubble__inner"[^>]*>)<svg.*?</svg>', r'\1', body, flags=re.S)
 # Footer credit: the 33rd//Creative logo replaces the original studio logo in the same spot
 if C['footer'].get('studio_logo'):
-    studio_logo_css = ('<style>.section-contacts__logo svg{display:none!important}'
-                       '.section-contacts__logo{display:block!important;width:clamp(160px,16vw,230px);aspect-ratio:3516/371;'
-                       'margin-left:auto;margin-right:auto;background:url(/brand/studio-logo.svg) center/contain no-repeat}</style>')
+    # "By [33rd//Creative logo] 💛" — the old studio-logo <svg> becomes the logo box (its own shapes hidden)
+    studio_logo_css = ('<style>.section-contacts__logo{display:flex!important;align-items:center;justify-content:center;'
+                       'gap:14px;width:max-content;margin-left:auto;margin-right:auto;pointer-events:none}'
+                       '.section-contacts__logo::before{content:"BY";font-family:"Futura Passata",Poppins,sans-serif;'
+                       'font-size:clamp(20px,2vw,28px);color:#f7f2e5;line-height:1}'
+                       '.section-contacts__logo::after{content:"\\1F49B";font-size:clamp(20px,2vw,28px);line-height:1}'
+                       '.section-contacts__logo svg{width:clamp(160px,16vw,230px)!important;height:auto!important;aspect-ratio:3516/371;'
+                       'background:url(/brand/studio-logo.svg) center/contain no-repeat}'
+                       '.section-contacts__logo svg *{display:none!important}</style>')
 else:
     studio_logo_css = '<style>.section-contacts__logo{display:none!important}</style>'
 # The archived page HTML is a snapshot taken after the intro had finished, so it shows the home page

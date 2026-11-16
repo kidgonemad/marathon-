@@ -75,7 +75,7 @@
     "steps": [
       "Pick your burger",
       "Grab a drink",
-      "Add fries"
+      "Add a side"
     ],
     "_steps_help": "3 step buttons following the 3D scroll (burger, drink, fries); final_step shows when the meal box closes.",
     "final_step": "Claim your meal"

@@ -10,7 +10,7 @@ How it stays in the original style:
   same toon shading + black outlines as the original food (see apply.py).
 - Each new item is placed at the world position of the item it replaces and scaled to a similar size.
 """
-import math, os, sys
+import json, math, os, re, sys
 import numpy as np
 import pygltflib
 import trimesh
@@ -29,7 +29,8 @@ C = {
     'grey': [0.45, 0.45, 0.5], 'purple': [0.44, 0.23, 0.84],
     # Marathon Burger build: brioche, grilled onions, American cheese, pickles, Fresno peppers, secret sauce
     'brioche': [0.8, 0.28, 0.02], 'onion': [0.75, 0.38, 0.06], 'sauce': [1.0, 0.38, 0.18],
-    'american': [1.0, 0.62, 0.04], 'wagyu': [0.22, 0.05, 0.015], 'pickle': [0.22, 0.55, 0.02], 'fresno': [0.9, 0.03, 0.02],
+    'american': [1.0, 0.62, 0.04], 'wagyu': [0.22, 0.05, 0.015],
+    'logo_red': [0.77, 0.02, 0.02], 'hashlite': [1.0, 0.8, 0.25], 'sauce_dark': [0.55, 0.06, 0.0], 'pickle': [0.22, 0.55, 0.02], 'fresno': [0.9, 0.03, 0.02],
 }
 
 
@@ -76,10 +77,82 @@ def extrude(poly, depth):
 
 
 # ---- item builders: each returns {part_name: (mesh, colour)} with base at y=0, height ~1 ----
-def soda(liquid_top=None, band='red', lid=True):
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def svg_polys(d, steps=7):
+    """Rings of an absolute M/L/C/Z path (the format tools/trace_brand.py writes) -> one even-odd shape."""
+    toks = re.findall(r'[MLCZ]|-?\d+(?:\.\d+)?', d)
+    rings, cur, i, cmd = [], [], 0, None
+    while i < len(toks):
+        tk = toks[i]
+        if tk in 'MLCZ':
+            cmd = tk; i += 1
+            if cmd == 'Z':
+                if len(cur) > 2: rings.append(cur)
+                cur = []
+            continue
+        if cmd == 'M':
+            cur = [(float(toks[i]), float(toks[i + 1]))]; i += 2; cmd = 'L'
+        elif cmd == 'L':
+            cur.append((float(toks[i]), float(toks[i + 1]))); i += 2
+        elif cmd == 'C':
+            x0, y0 = cur[-1]
+            x1, y1, x2, y2, x3, y3 = map(float, toks[i:i + 6]); i += 6
+            for s in np.linspace(0, 1, steps)[1:]:
+                u = 1 - s
+                cur.append((u**3*x0 + 3*u*u*s*x1 + 3*u*s*s*x2 + s**3*x3, u**3*y0 + 3*u*u*s*y1 + 3*u*s*s*y2 + s**3*y3))
+        else:
+            i += 1
+    shape = None
+    for r in sorted((Polygon(r).buffer(0) for r in rings), key=lambda p: -p.area):
+        shape = r if shape is None else shape.symmetric_difference(r)
+    return shape
+
+
+def logo_decal(width=0.44, y_mid=0.47, r0=0.30, taper=0.39 - 0.30, h_cup=0.86, face=0.0):
+    """One Marathon Burger logo on the cup front: red rectangle, white MARATHON, white 'Burger' under it,
+    bent onto the tapered cup wall (not wrapped around it)."""
+    T = json.load(open(os.path.join(ROOT, 'content', 'brand', 'traced.json')))
+    W, H = T['box']; bb = T['burger']['bbox']; pad = 50
+    k = width / (W + 2 * pad)
+    full_h = (bb[3] + 2 * pad) * k
+
+    def flat(shape, z0, depth):
+        geoms = getattr(shape, 'geoms', [shape])
+        m = trimesh.util.concatenate([trimesh.creation.extrude_polygon(g, depth) for g in geoms if g.area > 0])
+        m.apply_translation([0, 0, z0])
+        return m
+
+    def to_cup(m, sub):
+        for _ in range(sub):
+            m = m.subdivide()
+        v = m.vertices.copy()
+        x, y, z = v[:, 0], v[:, 1], v[:, 2]
+        R = r0 + taper * (y / h_cup)
+        ang = face + x / R
+        m.vertices = np.stack([np.sin(ang) * (R + z), y, np.cos(ang) * (R + z)], 1)
+        return m
+
+    # svg coords (y down, origin top-left of the red box) -> cup coords (centred, y up)
+    def place2d(shape):
+        return affinity.affine_transform(shape, [k, 0, 0, -k, -width / 2 + pad * k, y_mid + full_h / 2 - pad * k])
+
+    panel = Polygon([(-width / 2, y_mid - full_h / 2), (width / 2, y_mid - full_h / 2),
+                     (width / 2, y_mid + full_h / 2), (-width / 2, y_mid + full_h / 2)])
+    letters = [place2d(svg_polys(l['d'])) for l in T['letters']] + [place2d(svg_polys(T['burger']['d']))]
+    white = trimesh.util.concatenate([flat(s, 0.012, 0.005) for s in letters if s is not None and not s.is_empty])
+    return {'Logo_Panel': (to_cup(flat(panel, 0.003, 0.009), 4), 'logo_red'),
+            'Logo_Text': (to_cup(white, 1), 'white')}
+
+
+def soda(liquid_top=None, band='logo', lid=True, face=0.0):
     cup = lathe([(0, 0), (0.30, 0), (0.39, 0.86), (0.41, 0.88), (0.0, 0.88)])
-    parts = {'Cup': (cup, 'cream'),
-             'Band': (lathe([(0.0, 0.32), (0.343, 0.32), (0.38, 0.62), (0.0, 0.62)]), band)}
+    parts = {'Cup': (cup, 'cream')}
+    if band == 'logo':
+        parts.update(logo_decal(face=face))
+    else:
+        parts['Band'] = (lathe([(0.0, 0.32), (0.343, 0.32), (0.38, 0.62), (0.0, 0.62)]), band)
     if lid:
         parts['Lid'] = (lathe([(0, 0.86), (0.43, 0.86), (0.43, 0.92), (0.38, 0.93), (0.36, 0.97), (0.22, 1.0),
                                (0.08, 1.0), (0.0, 1.0)]), 'white')
@@ -109,21 +182,24 @@ def crispy(m, amount, seed=0):
 
 
 def drumette(seed):
-    m = trimesh.creation.capsule(height=0.26, radius=0.11, count=[20, 20])
-    v = m.vertices.copy()
-    t = (v[:, 2] - v[:, 2].min()) / (np.ptp(v[:, 2]) or 1)
-    k = 0.55 + 0.6 * np.sin(np.clip(t, 0, 1) * math.pi * 0.8)      # thin knuckle -> fat end
-    v[:, 0] *= k; v[:, 1] *= k
-    m.vertices = v
-    return crispy(m, 0.012, seed)
+    """Classic drumette: fat rounded meat end tapering to a short bone with a knob. Long axis = +Z."""
+    prof = [(0, 0), (0.035, 0.0), (0.06, 0.03), (0.095, 0.1), (0.125, 0.18), (0.13, 0.24), (0.115, 0.29),
+            (0.08, 0.325), (0.035, 0.34), (0, 0.342)]
+    meat = crispy(lathe(prof, 28), 0.006, seed)
+    meat.apply_scale([1.0, 1.0, 0.92])
+    meat = rotated(meat, -math.pi / 2, [1, 0, 0])                    # lathe axis Y -> +Z
+    meat.apply_translation([0, 0, 0.05])
+    bone = trimesh.util.concatenate([tube([0, 0, 0.07], [0, 0, -0.02], 0.026, 14), moved(sphere(0.045, 2), 0, 0, -0.035)])
+    return meat, bone
 
 
 def flat(seed):
-    m = trimesh.creation.capsule(height=0.24, radius=0.1, count=[20, 20])
-    m.apply_scale([1.35, 0.55, 1.0])                                  # wide, flat wingette
-    v = m.vertices.copy(); v[:, 1] += 0.03 * np.cos(v[:, 2] * 6)       # slight twist
-    m.vertices = v
-    return crispy(m, 0.01, seed)
+    """Wingette: flattened rounded piece with a bone tip at each end. Long axis = +Z."""
+    m = trimesh.creation.capsule(height=0.2, radius=0.1, count=[24, 24])
+    m.apply_scale([1.25, 0.6, 1.0])
+    m = crispy(m, 0.006, seed)
+    ends = [moved(sphere(0.032, 2), 0.04, 0, z) for z in (-0.2, 0.2)] + [moved(sphere(0.03, 2), -0.04, 0, z) for z in (-0.19, 0.19)]
+    return m, trimesh.util.concatenate(ends)
 
 
 def wing_basket():
@@ -137,26 +213,23 @@ def wing_basket():
     red_paper = liner.submesh([np.where(sector == 0)[0]], append=True)
     white_paper = liner.submesh([np.where(sector == 1)[0]], append=True)
     wings, bones = [], []
-    spots = [(-0.34, 0.16, -0.1, 0.3, 'd'), (0.0, 0.15, -0.22, -0.4, 'f'), (0.32, 0.16, -0.04, 0.9, 'd'),
-             (-0.18, 0.18, 0.2, -1.2, 'f'), (0.18, 0.2, 0.18, 2.0, 'd'), (0.02, 0.3, 0.0, 0.6, 'f'),
-             (-0.02, 0.34, -0.14, 2.6, 'd')]
+    # a neat pile: drumettes and flats alternating, a second layer on top
+    spots = [(-0.33, 0.13, -0.1, 0.4, 'd'), (-0.05, 0.12, -0.24, -0.5, 'f'), (0.28, 0.13, -0.12, 1.1, 'd'),
+             (-0.24, 0.13, 0.2, -1.3, 'f'), (0.15, 0.13, 0.2, 2.2, 'd'), (0.0, 0.27, -0.02, 0.7, 'f'),
+             (-0.12, 0.29, 0.06, 2.8, 'd')]
     for k, (x, y, z, yaw, kind) in enumerate(spots):
-        w = drumette(k) if kind == 'd' else flat(k)
-        tip = w.vertices[:, 2].min()
-        parts = [w]
-        bone = trimesh.util.concatenate([tube([0, 0, tip + 0.04], [0, 0, tip - 0.06], 0.03, 12),
-                                         moved(sphere(0.045, 2), 0, 0, tip - 0.07)])
-        if kind == 'd':
-            parts.append(bone)
+        meat, bone = drumette(k) if kind == 'd' else flat(k)
         out = []
-        for m in parts:
-            m = rotated(m, math.pi / 2 * 0.9, [0, 1, 0])
+        for m in (meat, bone):
+            m = rotated(m, math.pi / 2, [0, 1, 0])
             m = rotated(m, yaw, [0, 1, 0])
-            m = rotated(m, 0.25 if kind == 'd' else 0.1, [1, 0, 0])
+            m = rotated(m, 0.18 if kind == 'd' else 0.08, [1, 0, 0])
             out.append(moved(m, x, y, z))
-        wings.append(out[0])
-        if len(out) > 1:
-            bones.append(out[1])
+        wings.append(out[0]); bones.append(out[1])
+    # bigger and piled up so the wings read above the basket rim
+    def pile(ms):
+        m = trimesh.util.concatenate(ms); m.apply_scale(1.3); m.apply_translation([0, 0.03, 0]); return m
+    wings, bones = [pile(wings)], [pile(bones)]
     return {'Basket': (basket, 'red'), 'PaperRed': (red_paper, 'red'), 'PaperWhite': (white_paper, 'white'),
             'Wings': (trimesh.util.concatenate(wings), 'wing'), 'Bones': (trimesh.util.concatenate(bones), 'cream')}
 
@@ -187,14 +260,29 @@ def breakfast_sandwich():
 
 
 def hashbrowns():
-    def patty(seed):
-        m = trimesh.creation.capsule(height=0.5, radius=0.25, count=[24, 24])
-        m = rotated(m, math.pi / 2, [0, 1, 0])
-        m.apply_scale([1.0, 0.36, 1.0])
-        return crispy(m, 0.014, seed)        # shredded-potato surface
-    a = moved(rotated(patty(1), 0.15, [0, 0, 1]), -0.05, 0.1, -0.18)
-    b = moved(rotated(rotated(patty(2), 0.5, [0, 1, 0]), -0.35, [0, 0, 1]), 0.05, 0.22, 0.15)
-    return {'Hashbrowns': (trimesh.util.concatenate([a, b]), 'hash')}
+    """Two golden oval hash brown patties (one flat, one leaning on it) with shredded-potato strands on top."""
+    rng = np.random.default_rng(11)
+
+    def patty():
+        oval = LineString([(-0.2, 0), (0.2, 0)]).buffer(0.2, resolution=24)
+        body = yup(extrude(oval, 0.11))
+        body = crispy(body.subdivide(), 0.008, 5)
+        strands = []
+        for _ in range(26):
+            x, z = rng.uniform(-0.33, 0.33), rng.uniform(-0.14, 0.14)
+            if (abs(x) - 0.2) ** 2 + z ** 2 > 0.15 ** 2 and abs(x) > 0.2:
+                continue
+            ln = rng.uniform(0.06, 0.15)
+            s = trimesh.creation.box([ln, 0.012, 0.018])
+            s = rotated(s, rng.uniform(-0.5, 0.5), [0, 1, 0])
+            strands.append(moved(s, x, 0.112, z))
+        return body, trimesh.util.concatenate(strands)
+
+    b1, s1 = patty()
+    b2, s2 = patty()
+    lean = lambda m: moved(rotated(rotated(m, -0.45, [0, 0, 1]), 0.5, [0, 1, 0]), 0.08, 0.19, 0.06)
+    return {'Hashbrowns': (trimesh.util.concatenate([b1, lean(b2)]), 'hash'),
+            'SoftShreds': (trimesh.util.concatenate([s1, lean(s2)]), 'hashlite')}
 
 
 CA = [(-124.21, 41.99), (-120.0, 41.99), (-120.0, 39.0), (-114.63, 35.0), (-114.6, 34.3), (-114.72, 32.72),
@@ -467,8 +555,9 @@ class Scene:
         # group nodes are MBG_* (no styling); meshes are MB_* (toon shading + outlines in the site code)
         grp = self.add_node(parent_name, 'MBG_' + item_name, local)
         for part, (m, colour) in parts.items():
-            mi = self.mesh(m, colour, f'MB_{item_name}_{part}')
-            self.add_node(grp, f'MB_{item_name}_{part}', np.eye(4), mi)
+            pre = 'MBD_' if part.startswith(('Logo', 'Soft')) else 'MB_'   # MBD_: shaded, no black outlines
+            mi = self.mesh(m, colour, f'{pre}{item_name}_{part}')
+            self.add_node(grp, f'{pre}{item_name}_{part}', np.eye(4), mi)
         return grp
 
     def pivot(self, name, base):
@@ -524,24 +613,76 @@ burger_h = spots['Burger'][1][1]
 # Tray 1 — Marathon Burger combo: the original burger reskinned to the menu build, fries, drink
 for n in ('Astro_Cat', 'Donut', 'Plat_3'):   # Plat_3 was the dessert plate
     sc.hide(n)
-sc.place('Astro_Cat', 'Soda', soda(), sc.pivot('Astro_Cat', spots['Astro_Cat'][0]), burger_h * 1.55, yaw=0.4)
+CAM = np.array([-13.99, 66.11, 99.2])
+
+
+def facing(pos, menu_x, yaw):
+    d = CAM - (pos - np.array([menu_x, 0, 0]))
+    return math.atan2(d[0], d[2]) - yaw
+
+
+_p = sc.pivot('Astro_Cat', spots['Astro_Cat'][0])
+sc.place('Astro_Cat', 'Soda', soda(face=facing(_p, 100, 0.4)), _p, burger_h * 1.55, yaw=0.4)
+
+
+STACK = {}
+
+
+def yext(sc, name):
+    n = sc.g.nodes[sc.idx(name)]
+    s = (n.scale or [1, 1, 1])[1]
+    lo = min(sc.g.accessors[p.attributes.POSITION].min[1] for p in sc.g.meshes[n.mesh].primitives) * s
+    hi = max(sc.g.accessors[p.attributes.POSITION].max[1] for p in sc.g.meshes[n.mesh].primitives) * s
+    return (min(lo, hi), max(lo, hi))
 
 
 def marathon_burger(sc, part_of=lambda n: n):
     """Reskin Planetoño's burger as the Marathon Burger (menu: two wagyu patties smashed with grilled
-    onions, toasted brioche bun, Fresno peppers, house pickles, American cheese, secret sauce)."""
-    lo, hi = sc.bbox('Burger_Salad')
+    onions, toasted brioche bun, Fresno peppers, house pickles, American cheese, secret sauce) and restack
+    it bun / sauce / patty / cheese / patty / cheese / onions / pickles+Fresno / bun so nothing clips."""
     sc.hide('Burger_Bun_Sesame')                                   # brioche: no sesame
+    sc.hide('Burger_Onions_Bottom')                                # one onion layer is enough
+    sc.hide('Burger_Salad')                                        # lettuce -> pickles + Fresno peppers
     sc.swap_mesh('Burger_Tomato', 'Burger_Patty', 'MB_Burger_Patty_2')   # tomato -> second wagyu patty
     for n, c in (('Burger_Bun_Top', 'brioche'), ('Burger_Bun_Bottom', 'brioche'), ('Burger_Onions_Top', 'onion'),
-                 ('Burger_Onions_Bottom', 'onion'), ('Burger_Mayonnaise_Bottom', 'sauce'), ('Burger_Cheese', 'american'),
-                 ('Burger_Patty', 'wagyu')):
+                 ('Burger_Mayonnaise_Bottom', 'sauce'), ('Burger_Cheese', 'american'), ('Burger_Patty', 'wagyu')):
         sc.remat(n, c)
-    sc.hide('Burger_Salad')                                        # lettuce -> pickles + Fresno peppers
-    parent = sc.parent[sc.idx('Removed_Burger_Salad')]
-    sc.place(parent, 'Toppings', toppings(), np.array([(lo[0] + hi[0]) / 2, lo[1], (lo[2] + hi[2]) / 2]), 0,
-             width=max(hi[0] - lo[0], hi[2] - lo[2]) * 0.92)
+    # second cheese slice, a sibling of the second patty (in the scroll scene each layer has its own parent)
+    ch = sc.g.nodes[sc.idx('Burger_Cheese')]
+    p2 = sc.idx('MB_Burger_Patty_2')
+    c2 = sc.add_node(sc.parent[p2], 'MB_Burger_Cheese_2', np.eye(4), ch.mesh)
+    sc.g.nodes[c2].matrix = None
+    sc.g.nodes[c2].scale, sc.g.nodes[c2].rotation = ch.scale, ch.rotation
 
+    order = ['Burger_Patty', 'Burger_Cheese', 'MB_Burger_Patty_2', 'MB_Burger_Cheese_2', 'Burger_Onions_Top', 'Burger_Bun_Top']
+    if not STACK:                         # hero burger: work out the stack once (layer y in burger-local units)
+        ty = {n: (sc.g.nodes[sc.idx(n)].translation or [0, 0, 0])[1] for n in order if n != 'MB_Burger_Cheese_2'}
+        ty['MB_Burger_Patty_2'] = sc.g.nodes[p2].translation[1]
+        top = ty['Burger_Patty'] + yext(sc, 'Burger_Patty')[1]
+        want = {'Burger_Patty': ty['Burger_Patty']}
+        for n in order[1:]:
+            lo, hi = yext(sc, 'Burger_Cheese' if 'Cheese' in n else n)
+            if 'Cheese' in n:
+                want[n] = top + 0.008 - hi; top = top + 0.008          # slice laid on the patty
+            elif n == 'Burger_Bun_Top':
+                want[n] = top + 0.045 - lo                              # room for pickles + Fresno peppers
+            else:
+                want[n] = top + 0.004 - lo; top = want[n] + hi
+        STACK.update(orig=ty, want=want)
+    for n in order:
+        i = sc.idx(n); node = sc.g.nodes[i]
+        tr = list(node.translation or [0, 0, 0])
+        if n == 'MB_Burger_Cheese_2':
+            base = sc.g.nodes[p2].translation or [0, 0, 0]
+            tr = [base[0], base[1] + STACK['want'][n] - STACK['want']['MB_Burger_Patty_2'], base[2]]
+        else:
+            tr[1] += STACK['want'][n] - STACK['orig'][n]
+        node.translation = tr; node.matrix = None
+    # pickles + Fresno rings on top of the onions
+    lo, hi = sc.bbox('Burger_Onions_Top')
+    sc.place(sc.parent[sc.idx('Burger_Onions_Top')], 'Toppings', toppings(),
+             np.array([(lo[0] + hi[0]) / 2, hi[1] - (hi[1] - lo[1]) * 0.15, (lo[2] + hi[2]) / 2]), 0,
+             width=max(hi[0] - lo[0], hi[2] - lo[2]) * 0.95)
 
 marathon_burger(sc)
 
@@ -549,7 +690,8 @@ marathon_burger(sc)
 for n in ('Astro_Chik', 'Hot_Dog', 'Ice_Cream'):
     sc.hide(n)
 sc.place('Hot_Dog', 'WingBasket', wing_basket(), sc.pivot('Hot_Dog', spots['Hot_Dog'][0]), 0, yaw=0.3, width=spots['Burger'][1][0] * 1.35)
-sc.place('Astro_Chik', 'Soda', soda(), sc.pivot('Astro_Chik', spots['Astro_Chik'][0]), burger_h * 1.55, yaw=-0.3)
+_p = sc.pivot('Astro_Chik', spots['Astro_Chik'][0])
+sc.place('Astro_Chik', 'Soda', soda(face=facing(_p, 200, -0.3)), _p, burger_h * 1.55, yaw=-0.3)
 
 # Tray 3 — Breakfast: Marathon Breakfast Sandwich (original brioche bun + cheese + sausage patty + egg),
 # hashbrowns, Marathon Coffee, fresh squeezed OJ

@@ -42,6 +42,37 @@
     if (navigator.clipboard) navigator.clipboard.writeText(email).catch(() => {});
   }));
 
+  // ---- music: same song and same on/off setting as the home page (pinia "audio" store in localStorage) ----
+  const MUSIC = '/media/sounds/marathon-music-2.mp3';
+  const readPref = () => { try { return JSON.parse(localStorage.getItem('audio') || '{}').isAudioEnabled !== false; } catch (e) { return true; } };
+  const savePref = on => { try { localStorage.setItem('audio', JSON.stringify({ isAudioEnabled: on })); } catch (e) { /* private mode */ } };
+  let audioOn = readPref(), ctx = null, riveSound = null;
+  const ensureCtx = () => { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); return ctx; };
+  const WAVES = { on: ['M 33 16 Q 37 20 33 24', 'M 37 13 Q 44 20 37 27'], off: ['M 33 16.5 Q 36.5 20 40 23.5', 'M 40 16.5 Q 36.5 20 33 23.5'] };
+  function showSound() {
+    header.querySelectorAll('.the-sound-switcher-mobile').forEach(btn => {
+      btn.classList.toggle('is-muted', !audioOn);
+      const waves = [...btn.querySelectorAll('path')].filter(p => /^M 3[3-7] 1[3-6]/.test(p.getAttribute('d') || ''));
+      waves.forEach((p, i) => { if (WAVES.on[i]) p.setAttribute('d', (audioOn ? WAVES.on : WAVES.off)[i]); });
+    });
+    if (riveSound && riveSound.value !== audioOn) riveSound.value = audioOn;
+  }
+  function setAudio(on) {
+    audioOn = on; savePref(on); showSound();
+    if (!window.MBMusic) return;
+    if (on) { ensureCtx(); window.MBMusic.unlock(ctx, MUSIC); window.MBMusic.start(ctx, MUSIC, 1.5); }
+    else window.MBMusic.stop(1);
+  }
+  // browsers only allow sound after a tap: start the music on the first tap anywhere if sound is on
+  const firstTap = e => {
+    if (e.target.closest && e.target.closest('.the-sound-switcher, .the-sound-switcher-mobile')) return;   // the switch handles itself
+    window.removeEventListener('pointerdown', firstTap, true);
+    if (audioOn && window.MBMusic) { ensureCtx(); window.MBMusic.unlock(ctx, MUSIC); window.MBMusic.start(ctx, MUSIC, 1.5); }
+  };
+  window.addEventListener('pointerdown', firstTap, true);
+  header.querySelectorAll('.the-sound-switcher-mobile').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); setAudio(!audioOn); }));
+  showSound();
+
   // ---- Rive: nav labels, Contact, sound switch ----
   const R = window.rive;
   if (!R) return;
@@ -72,8 +103,13 @@
     });
     const sw = header.querySelector('.the-sound-switcher canvas');
     if (sw) {
-      mount(sw, { artboard: 'sound_animation_reworked', autoBind: true },
-            r => { try { r.viewModelInstance.boolean('isAudioEnabled').value = true; } catch (e) { /* optional */ } });
+      mount(sw, { artboard: 'sound_animation_reworked', autoBind: true }, r => {
+        try {
+          riveSound = r.viewModelInstance.boolean('isAudioEnabled');
+          riveSound.value = audioOn;
+          riveSound.on(v => { if (v !== audioOn) setAudio(v); });   // the Rive switch toggles itself on click
+        } catch (e) { /* optional */ }
+      });
     }
   }
 })();

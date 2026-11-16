@@ -270,7 +270,8 @@ stepper_cfg = {'steps': C['how_it_works']['steps'], 'final': C['how_it_works']['
 head += ('<link rel="stylesheet" href="/brand/logo.css"><link rel="stylesheet" href="/brand/stepper.css">'
          '<script src="/brand/logo-data.js"></script><script src="/brand/logo.js"></script>'
          '<script>window.MARATHON_STEPPER=' + json.dumps(stepper_cfg, ensure_ascii=False) + '</script>'
-         '<script src="/brand/stepper.js"></script><script src="/brand/palms.js"></script>' + studio_logo_css)
+         '<script src="/brand/stepper.js"></script><script src="/brand/palms.js"></script>'
+         '<script src="/brand/music.js"></script>' + studio_logo_css)
 H = head + body
 open(html_path, 'w', encoding='utf-8').write(H)
 
@@ -296,7 +297,7 @@ _svg = open(rel('content/brand/33rd-trace-animated.svg'), encoding='utf-8').read
 _inner = re.sub(r'<defs>.*?</defs>', '', _svg[_svg.index('>', _svg.index('<svg')) + 1:_svg.rindex('</svg>')], flags=re.S)
 open(os.path.join(dist, 'brand', 'studio-data.js'), 'w', encoding='utf-8').write(
     'window.STUDIO_SVG=' + json.dumps({'viewBox': re.search(r'viewBox="([^"]+)"', _svg).group(1), 'inner': _inner.strip()}) + ';\n')
-for f in ('logo.js', 'logo.css', 'stepper.js', 'stepper.css', 'studio.js', 'studio.css'):
+for f in ('logo.js', 'logo.css', 'stepper.js', 'stepper.css', 'studio.js', 'studio.css', 'music.js'):
     shutil.copy(rel(os.path.join('content', 'brand', f)), os.path.join(dist, 'brand', f))
 
 traced = json.load(open(rel('content/brand/traced.json'), encoding='utf-8'))
@@ -402,24 +403,27 @@ js_swaps = [
      'E=window.MarathonLogo.mount(o.value),d=E.loadInput'),
     ('"Click | Planetoño logo"', '"Click | Logo"'),
     ('ambient:`${BASE_URL}/ambient.mp3`', 'ambient:`${BASE_URL}/marathon-music-2.mp3`'),   # site music
-    # Stream the music through an <audio> element instead of downloading + decoding the whole track
-    # (a 4-minute song decodes to ~90 MB of PCM: seconds of delay and stutter on phones). Same gain node,
-    # so the sound switch and fades work as before; fade-in shortened from 3s to 1.5s.
+    # Music: stream through /brand/music.js. Its <audio> element is started (silently) inside the first
+    # tap — the AudioManager's first-click handler — because phones/Safari block element playback that
+    # starts later from a timer (the site asks for music 600 ms after START). playAmbient/stopAmbient fade it.
+    ('this.ctx.state==="suspended"&&this.ctx.resume(),window.removeEventListener("click",e)};window.addEventListener("click",e)',
+     'this.ctx.state==="suspended"&&this.ctx.resume(),window.MBMusic&&window.MBMusic.unlock(this.ctx,this._resolveUrl("ambient")),'
+     'window.removeEventListener("click",e)};window.addEventListener("click",e)'),
     ('const n=await this._loadBuffer(e);if(!n)return;const r=this.ctx.createBufferSource();r.buffer=n,r.loop=!0;'
      'const i=this.ctx.createGain();r.connect(i),i.connect(this.ctx.destination),i.gain.value=0,'
      'i.gain.linearRampToValueAtTime(.5,this.ctx.currentTime+3),r.start(0),this.ambientSource=r,this.ambientGain=i,'
      'this.currentAmbientName=e',
-     'const a=new Audio(this._resolveUrl(e));if(!a.src)return;a.loop=!0,a.preload="auto",a.crossOrigin="anonymous",'
-     'a.setAttribute("playsinline","");const r=this.ctx.createMediaElementSource(a);r.stop=()=>{a.pause(),'
-     'a.removeAttribute("src"),a.load()};const i=this.ctx.createGain();r.connect(i),i.connect(this.ctx.destination),'
-     'i.gain.value=0,i.gain.linearRampToValueAtTime(.5,this.ctx.currentTime+1.5),a.play().catch(()=>{}),'
-     'this.ambientSource=r,this.ambientGain=i,this.currentAmbientName=e'),
+     'window.MBMusic.start(this.ctx,this._resolveUrl(e),1.5);this.ambientSource={stop(){},disconnect(){}};'
+     'this.ambientGain={gain:{cancelScheduledValues(){},setValueAtTime(){},linearRampToValueAtTime(){},value:0},'
+     'disconnect(){}};this.currentAmbientName=e'),
+    ('stopAmbient(e=1.5){if(!this.ambientSource||!this.ambientGain)return;',
+     'stopAmbient(e=1.5){if(!this.ambientSource||!this.ambientGain)return;window.MBMusic&&window.MBMusic.stop(Math.min(e,1.5));'),
     # footer credit links to 33rd Creative (the logo itself is drawn/animated by /brand/studio.js)
     ('section-contacts__logo",href:"https://tubikstudio.com/"', 'section-contacts__logo",href:"https://33rdcreative.com/"'),
     # New Marathon Burger 3D parts (MB_*) get the same toon shading + outlines as the original food
     ('get(e){const t=this.params[e];return{...this.defaultParams,...t||{}}}',
-     'get(e){const t=this.params[e]||(e&&e.startsWith("MB_")?{toonShadingEnabled:!0,geometryEnabled:!0,'
-     'conditionalGeometryEnabled:!0}:void 0);return{...this.defaultParams,...t||{}}}'),
+     'get(e){const t=this.params[e]||(e&&e.startsWith("MBD_")?{toonShadingEnabled:!0}:e&&e.startsWith("MB_")?'
+     '{toonShadingEnabled:!0,geometryEnabled:!0,conditionalGeometryEnabled:!0}:void 0);return{...this.defaultParams,...t||{}}}'),
     ('function gi(a){const e=a.material.color||0', 'function gi(a){if(!a.material)return;const e=a.material.color||0'),
     # The 3D scenes waited for a hard-coded number of outlined meshes (100 / 30); count the real ones
     ('_addConditionalGeometry(e,t){e.isMesh&&(Ie.generate(e.geometry,t)',
@@ -435,7 +439,7 @@ js_swaps = [
     ('_("canvas",{class:D(["stepper__rive",{"is-hovered":I(v)}]),ref:"canvas"},null,2)',
      '_("div",{class:D(["stepper__rive",{"is-hovered":I(v)}]),ref:"canvas"},null,2)'),
 ]
-REQUIRED_JS = [a for a, _ in js_swaps[-9:]] + [js_swaps[i][0] for i, (a, _) in enumerate(js_swaps) if a.startswith('const n=await this._loadBuffer')]
+REQUIRED_JS = [a for a, _ in js_swaps[-9:]] + [a for a, _ in js_swaps if 'MBMusic' in _]
 colors = {k.lower(): v for k, v in C['colors'].items() if k.startswith('#') and k.lower() != v.lower()}
 color_re = re.compile('|'.join(re.escape(k) for k in colors) + r'(?![0-9a-fA-F])', re.I) if colors else None
 

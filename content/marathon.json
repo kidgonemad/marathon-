@@ -195,11 +195,7 @@
     "_help": "Each line is a string, or a list of pieces where a piece can be {\"text\": ..., \"link\": ...}.",
     "headline": [
       "ThE MaRaThoN CoNtiNuEs.",
-      "SeE YoU aT ThE GriLL.",
-      [
-        "By 33rdcreative ",
-        "💛"
-      ]
+      "SeE YoU aT ThE GriLL."
     ],
     "left_note": [
       "Melrose · Venice Beach · Canoga Park",
@@ -215,7 +211,8 @@
         }
       ]
     ],
-    "show_studio_logo": false
+    "studio_logo": "content/brand/33rd-creative.svg",
+    "_studio_logo_help": "Credit logo shown above the footer headline (where the original studio logo sat). Set to null to hide."
   },
   "colors": {
     "_help": "Original hex -> new hex. Applied to every stylesheet, inline style and script.",

@@ -236,6 +236,9 @@ for old, new in text_swaps:
     o, n = html.escape(old, quote=False), html.escape(new, quote=False)
     body = body.replace('>' + o + '<', '>' + n + '<')
 body = body.replace('mail@tubikstudio.com', html.escape(brand['email']))
+body = re.sub(r'<p[^>]*>(?:(?!</p>).)*tubikstudio\.com(?:(?!</p>).)*</p>', '', body, flags=re.S)  # old "By tubik" line
+body = re.sub(r'(class="section-contacts__logo"[^>]*?) href="https://tubikstudio\.com/"', r'\1', body)
+body = re.sub(r'(<a[^>]*?) href="https://tubikstudio\.com/"([^>]*class="section-contacts__logo")', r'\1\2', body)
 body = body.replace('alt="Planetoño"', 'alt="' + html.escape(brand['name']) + '"')
 
 # Logo: the Rive "loader_animation" canvas is replaced by a <div> that /brand/logo.js fills
@@ -243,7 +246,13 @@ body = body.replace('alt="Planetoño"', 'alt="' + html.escape(brand['name']) + '
 body = re.sub(r'<canvas class="the-preloader__logo"([^>]*?)(?: width="\d+" height="\d+")?([^>]*)></canvas>',
               r'<div class="the-preloader__logo"\1\2></div>', body)
 body = re.sub(r'(<div class="decoration-bubble__inner"[^>]*>)<svg.*?</svg>', r'\1', body, flags=re.S)
-studio_logo_css = '' if C['footer'].get('show_studio_logo', True) else '<style>.section-contacts__logo{display:none!important}</style>'
+# Footer credit: the 33rd//Creative logo replaces the original studio logo in the same spot
+if C['footer'].get('studio_logo'):
+    studio_logo_css = ('<style>.section-contacts__logo svg{display:none!important}'
+                       '.section-contacts__logo{display:block!important;width:clamp(160px,16vw,230px);aspect-ratio:3516/371;'
+                       'margin-left:auto;margin-right:auto;background:url(/brand/studio-logo.svg) center/contain no-repeat}</style>')
+else:
+    studio_logo_css = '<style>.section-contacts__logo{display:none!important}</style>'
 # The archived page HTML is a snapshot taken after the intro had finished, so it shows the home page
 # for a moment before the app re-creates the intro screen. Keep the page hidden until the intro exists.
 studio_logo_css += ('<style id="mb-boot">html:not(.mb-ready) #__nuxt,html:not(.mb-ready) #teleports{visibility:hidden}'
@@ -274,6 +283,8 @@ os.makedirs(os.path.join(dist, 'brand'), exist_ok=True)
 shutil.copy(rel(brand['favicon']), os.path.join(dist, 'brand', 'favicon.svg'))
 if brand.get('og_image'):
     shutil.copy(rel(brand['og_image']), os.path.join(dist, 'brand', os.path.basename(brand['og_image'])))
+if C['footer'].get('studio_logo'):
+    shutil.copy(rel(C['footer']['studio_logo']), os.path.join(dist, 'brand', 'studio-logo.svg'))
 for f in ('logo.js', 'logo.css', 'stepper.js', 'stepper.css'):
     shutil.copy(rel(os.path.join('content', 'brand', f)), os.path.join(dist, 'brand', f))
 
@@ -379,6 +390,8 @@ js_swaps = [
      'autoplay:!0,onLoad:()=>{E.resizeDrawingSurfaceToCanvas(),d=E.stateMachineInputs("Loader02").find(T=>T.name==="CheckLoad")}})',
      'E=window.MarathonLogo.mount(o.value),d=E.loadInput'),
     ('"Click | Planetoño logo"', '"Click | Logo"'),
+    # footer credit logo no longer links to the original studio (no 33rd Creative URL given)
+    ('section-contacts__logo",href:"https://tubikstudio.com/"', 'section-contacts__logo",href:void 0'),
     # New Marathon Burger 3D parts (MB_*) get the same toon shading + outlines as the original food
     ('get(e){const t=this.params[e];return{...this.defaultParams,...t||{}}}',
      'get(e){const t=this.params[e]||(e&&e.startsWith("MB_")?{toonShadingEnabled:!0,geometryEnabled:!0,'

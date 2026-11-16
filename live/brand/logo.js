@@ -62,7 +62,7 @@
       return g;
     });
     const burger = el('g', { class: 'mb-logo__burger' }, svg);
-    cartoon(burger, D.burger.d, D.colors.burger, { flat, stroke: 12, shadow: 10, outline: D.colors.burgerOutline });
+    cartoon(burger, D.burger.d, D.colors.burger, { flat: true });   // "Burger" script: solid black, no outline
 
     // Loader: palm row centred where the wordmark sits
     const loader = el('g', { class: 'mb-logo__loader' }, svg);

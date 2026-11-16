@@ -271,7 +271,7 @@ for f in ('logo.js', 'logo.css', 'stepper.js', 'stepper.css'):
 traced = json.load(open(rel('content/brand/traced.json'), encoding='utf-8'))
 flat = brand.get('logo_style') == 'flat'
 logo_colors = ({'box': '#e31e26', 'letters': '#ffffff', 'burger': '#000000'} if flat else
-               {'box': '#e31e26', 'letters': '#f7f2e5', 'burger': '#000000', 'burgerOutline': '#f7f2e5'})
+               {'box': '#e31e26', 'letters': '#f7f2e5', 'burger': '#000000'})
 logo_data = dict(traced, name=brand['name'], style='flat' if flat else 'cartoon', colors=logo_colors,
                  sound='/media/sounds/hover.mp3')
 open(os.path.join(dist, 'brand', 'logo-data.js'), 'w', encoding='utf-8').write(
@@ -291,7 +291,7 @@ def static_shape(d, fill, stroke, shadow, outline='#000'):
 svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -40 {W + 80} {bb[3] + 80}">'
        + static_shape(f'M0 0H{W}V{Hh}H0Z', logo_colors['box'], 22, 16)
        + ''.join(static_shape(l['d'], logo_colors['letters'], 14, 10) for l in traced['letters'])
-       + static_shape(traced['burger']['d'], logo_colors['burger'], 12, 10, logo_colors.get('burgerOutline', '#000')) + '</svg>')
+       + f'<path d="{traced["burger"]["d"]}" fill="{logo_colors["burger"]}"/>' + '</svg>')
 logo_out = os.path.join(dist, 'images', 'logo.svg')
 if brand.get('logo_image'):
     shutil.copy(rel(brand['logo_image']), logo_out)

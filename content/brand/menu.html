@@ -54,7 +54,7 @@ li:first-child { border-top: 0; padding-top: 0; }
   padding: 0 7px; margin-left: 8px; vertical-align: middle; }
 .foot { text-align: center; padding: 40px 16px 60px; font-size: 13px; }
 .foot .credit { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 22px; font-family: "Futura Passata", Poppins, sans-serif; font-size: 22px; }
-.foot .studio { width: 200px; height: auto; filter: brightness(0); opacity: .85; }
+.foot .studio { width: 200px; height: auto; color: #000; overflow: visible; display: block; }
 .foot strong { display: block; font-family: "Futura Passata", Poppins, sans-serif; font-size: 28px; margin-bottom: 10px; }
 .palm { position: absolute; width: 64px; height: 71px; pointer-events: none; animation: bob 3s ease-in-out infinite; }
 @keyframes bob { 50% { transform: translateY(-10px) rotate(4deg); } }
@@ -77,8 +77,10 @@ li:first-child { border-top: 0; padding-top: 0; }
 <main>
 {{SECTIONS}}
 </main>
-<div class="foot"><div class="credit"><img class="studio" src="/brand/studio-logo.svg" alt="33rd Creative" width="200"></div><strong>ThE MaRaThoN CoNtiNuEs.</strong>{{FOOTNOTE}}</div>
+<div class="foot"><div class="credit"><a class="studio-link" href="https://33rdcreative.com/" target="_blank" rel="noopener noreferrer"><svg class="studio" data-studio-logo></svg></a></div><strong>ThE MaRaThoN CoNtiNuEs.</strong>{{FOOTNOTE}}</div>
 <script src="/brand/palms.js"></script>
 <script src="/brand/menu-header.js"></script>
+<script src="/brand/studio-data.js"></script>
+<script src="/brand/studio.js"></script>
 </body>
 </html>

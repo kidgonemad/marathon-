@@ -59,9 +59,20 @@ li:first-child { border-top: 0; padding-top: 0; }
 .foot strong { display: block; font-family: "Futura Passata", Poppins, sans-serif; font-size: 28px; margin-bottom: 10px; }
 .palm { position: absolute; width: 64px; height: 71px; pointer-events: none; animation: bob 3s ease-in-out infinite; }
 @keyframes bob { 50% { transform: translateY(-10px) rotate(4deg); } }
+/* phone navigation, styled like the home page's MENU button and red panel */
+.menu-btn { display: none; font-family: "Futura Passata", Poppins, sans-serif; font-size: 20px; background: var(--cream);
+  border: 3px solid #000; border-radius: 14px; box-shadow: 4px 4px 0 #000; padding: 6px 16px; cursor: pointer; }
+.mobile-nav { position: fixed; z-index: 20; left: 12px; right: 12px; top: 96px; background: var(--red); border: 3px solid #000;
+  border-radius: 28px; padding: 18px 24px; display: grid; }
+.mobile-nav[hidden] { display: none; }
+.mobile-nav a { font-weight: 700; font-size: 24px; color: var(--cream); text-decoration: none; text-align: center; padding: 16px 0;
+  border-bottom: 2px solid #000; -webkit-text-stroke: 1px #000; paint-order: stroke fill; text-shadow: 0 2px 0 #000; }
+.mobile-nav a:last-child { border-bottom: 0; }
 @media (max-width: 700px) {
   header { grid-template-columns: 1fr auto; }
-  header nav.start { display: none; }
+  header nav.start, header nav.end { display: none; }
+  .menu-btn { display: block; }
+  .hero .palm:nth-of-type(n+3) { display: none; }   /* keep palms off the section chips */
   main { columns: 1; }
 }
 @media (prefers-reduced-motion: reduce) { .palm { animation: none; } }
@@ -72,8 +83,13 @@ li:first-child { border-top: 0; padding-top: 0; }
   <nav class="start"><a href="/#how">How it works</a><a href="/#locations">Locations</a></nav>
   <a class="logo-link" href="/" aria-label="{{NAME}} home"><div class="the-preloader__logo" id="logo"></div></a>
   <nav class="end"><a href="/">Home</a><a href="mailto:{{EMAIL}}">Contact</a></nav>
+  <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav">MENU</button>
 </header>
-<div class="hero">
+<nav class="mobile-nav" id="mobile-nav" hidden>
+  <a href="/#how">How it works</a><a href="/#locations">Locations</a><a href="#top-menu">Menu</a>
+  <a href="/">Home</a><a href="mailto:{{EMAIL}}">Contact</a>
+</nav>
+<div class="hero" id="top-menu">
   {{PALMS}}
   <h1 class="shadow-text">MeNu</h1>
   <p>Double wagyu smash burgers, hot wings, Marathon classics and breakfast.</p>
@@ -87,6 +103,10 @@ li:first-child { border-top: 0; padding-top: 0; }
   const logo = window.MarathonLogo.mount(document.getElementById('logo'));
   logo.volume = 0;
   setTimeout(() => { logo.loadInput.value = true; }, 250);
+  const btn = document.querySelector('.menu-btn'), panel = document.getElementById('mobile-nav');
+  const setOpen = open => { panel.hidden = !open; btn.setAttribute('aria-expanded', open); btn.textContent = open ? 'CLOSE' : 'MENU'; };
+  btn.addEventListener('click', () => setOpen(panel.hidden));
+  panel.addEventListener('click', e => { if (e.target.tagName === 'A') setOpen(false); });
 </script>
 </body>
 </html>

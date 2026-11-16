@@ -7,7 +7,7 @@
 (function () {
   function mount(root, cb) {
     const cfg = window.MARATHON_STEPPER || { steps: ['Pick your burger', 'Grab a drink', 'Add fries'], final: 'Claim your meal' };
-    root.classList.add('mb-stepper');
+    root.classList.add('mb-stepper');  // informational only: styling must not depend on it (Vue resets the class on hover)
     root.innerHTML = '';
     const btns = cfg.steps.map((label, i) => {
       const b = document.createElement('button');
@@ -36,7 +36,7 @@
       pill.animate && pill.animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: .7 },
                                     { transform: 'scale(1)', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.34,1.56,.64,1)' });
     }
-    const go = id => { cb.onChange(-1); cb.onChange(id); };
+    const go = id => { render(id); cb.onChange(-1); cb.onChange(id); };   // highlight right away, then scroll there
     btns.forEach((b, i) => b.addEventListener('click', () => go(i)));
     pill.addEventListener('click', () => go(current >= cfg.steps.length ? cfg.steps.length : current));
     root.addEventListener('pointerenter', () => cb.onHover(true));

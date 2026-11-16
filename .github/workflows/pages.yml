@@ -1,10 +1,9 @@
 # Builds the site and publishes it to GitHub Pages at https://<owner>.github.io/<repo>/
-# One-time setup: repo Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
-name: Deploy site to GitHub Pages
+# Only needed if Pages is switched to Source: "GitHub Actions". With the current "Deploy from a branch"
+# setting the site is served from live/ instead (tools/build_live.py). Run manually from the Actions tab.
+name: Deploy site to GitHub Pages (Actions mode)
 
 on:
-  push:
-    branches: [claude/kind-hopper-p4tsyy]
   workflow_dispatch:
 
 permissions:

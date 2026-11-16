@@ -37,9 +37,9 @@ maps, the sounds and the custom cursor. Everything brand-specific is now Maratho
 
 ## Live version (GitHub Pages)
 
-Every push to the branch rebuilds the site and publishes it at **https://kidgonemad.github.io/marathon-/**
-(`.github/workflows/pages.yml`). One-time setup: repo **Settings → Pages → Build and deployment → Source:
-GitHub Actions**, then re-run the "Deploy site to GitHub Pages" workflow from the Actions tab.
+Interactive version: **https://kidgonemad.github.io/marathon-/** (redirects to `/live/`).
+Pages is set to "Deploy from a branch", so the site is served from the `live/` folder. After editing content,
+run `python3 -I tools/apply.py && python3 -I tools/build_live.py`, then commit and push.
 
 ## Edit and rebuild
 

@@ -1,0 +1,28 @@
+/* 33rd//Creative credit — keyframes, durations and stagger copied from 33rdcreative.com's trace-animated.svg.
+   Runs when .is-playing is added (in view / hover) instead of on page load; colour follows the text colour. */
+/* their logo is shown as an <img>, so everything is clipped to the logo frame (tilted slashes show as
+   short stubs, the words slide in from the edges) and the whole logo fades/scales in (introFadeIn) */
+.studio-anim { overflow: hidden !important; opacity: 0; }
+.studio-anim.is-playing { animation: studioIntroFadeIn 0.5s ease-out 0.2s forwards; }
+@keyframes studioIntroFadeIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+.studio-anim .text-fill { fill: currentColor; }
+.studio-anim .slash { transform-origin: center center; transform: rotate(-25deg); }
+.studio-anim .left-text { opacity: 0; transform: translateX(-200px); }
+.studio-anim .right-text { opacity: 0; transform: translateX(200px); }
+.studio-anim.is-playing .slash { animation: studioTiltSlash 1.5s ease-out 0.5s forwards; }
+.studio-anim.is-playing .left-text { animation: studioSlideFromLeft 1s ease-out 0.8s forwards; }
+.studio-anim.is-playing .right-text { animation: studioSlideFromRight 1s ease-out 0.8s forwards; }
+.studio-anim.is-playing .char-1 { animation-delay: 0.8s; }
+.studio-anim.is-playing .char-2 { animation-delay: 0.9s; }
+.studio-anim.is-playing .char-3 { animation-delay: 1.0s; }
+.studio-anim.is-playing .char-4 { animation-delay: 1.1s; }
+.studio-anim.is-playing .char-5 { animation-delay: 1.2s; }
+.studio-anim.is-playing .char-6 { animation-delay: 1.3s; }
+.studio-anim.is-playing .char-7 { animation-delay: 1.4s; }
+.studio-anim.is-playing .char-8 { animation-delay: 1.5s; }
+@keyframes studioTiltSlash { 0% { transform: rotate(-25deg); } 100% { transform: rotate(0deg); } }
+@keyframes studioSlideFromLeft { 0% { opacity: 0; transform: translateX(-200px); } 100% { opacity: 1; transform: translateX(0); } }
+@keyframes studioSlideFromRight { 0% { opacity: 0; transform: translateX(200px); } 100% { opacity: 1; transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .studio-anim, .studio-anim .slash, .studio-anim .left-text, .studio-anim .right-text { animation: none !important; opacity: 1; transform: none; }
+}

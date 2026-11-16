@@ -250,7 +250,8 @@ if C['footer'].get('studio_logo'):
     # 33rd//Creative credit: the old studio-logo <svg> is redrawn and animated by /brand/studio.js
     studio_logo_css = ('<style>.section-contacts__logo{display:block!important;width:max-content;margin-left:auto;'
                        'margin-right:auto;color:#f7f2e5}'
-                       '.section-contacts__logo svg{width:clamp(170px,17vw,240px)!important;height:auto!important;overflow:visible}</style>'
+                       '.section-contacts__logo svg{width:clamp(170px,17vw,240px)!important;height:auto!important}</style>'
+                       '<link rel="stylesheet" href="/brand/studio.css">'
                        '<script src="/brand/studio-data.js"></script><script src="/brand/studio.js"></script>')
 else:
     studio_logo_css = '<style>.section-contacts__logo{display:none!important}</style>'
@@ -276,6 +277,8 @@ open(html_path, 'w', encoding='utf-8').write(H)
 # ---------------------------------------------------------------- 3D models (built by tools/models.py)
 for f in glob.glob(rel('content/three/*.glb')):
     shutil.copy(f, os.path.join(dist, 'three', os.path.basename(f)))
+if os.path.exists(rel('content/media/ambient.mp3')):     # site music (looped by the site's audio manager)
+    shutil.copy(rel('content/media/ambient.mp3'), os.path.join(dist, 'media', 'sounds', 'ambient.mp3'))
 for f in glob.glob(rel('content/lottie/*.json')):     # badges, built by tools/badges.py
     shutil.copy(f, os.path.join(dist, 'lottie', os.path.basename(f)))
 
@@ -286,9 +289,12 @@ if brand.get('og_image'):
     shutil.copy(rel(brand['og_image']), os.path.join(dist, 'brand', os.path.basename(brand['og_image'])))
 if C['footer'].get('studio_logo'):
     shutil.copy(rel(C['footer']['studio_logo']), os.path.join(dist, 'brand', 'studio-logo.svg'))
+# 33rd//Creative credit artwork: the studio's own animated logo (33rdcreative.com trace-animated.svg)
+_svg = open(rel('content/brand/33rd-trace-animated.svg'), encoding='utf-8').read()
+_inner = re.sub(r'<defs>.*?</defs>', '', _svg[_svg.index('>', _svg.index('<svg')) + 1:_svg.rindex('</svg>')], flags=re.S)
 open(os.path.join(dist, 'brand', 'studio-data.js'), 'w', encoding='utf-8').write(
-    'window.STUDIO_LOGO=' + open(rel('content/brand/studio-traced.json'), encoding='utf-8').read() + ';\n')
-for f in ('logo.js', 'logo.css', 'stepper.js', 'stepper.css', 'studio.js'):
+    'window.STUDIO_SVG=' + json.dumps({'viewBox': re.search(r'viewBox="([^"]+)"', _svg).group(1), 'inner': _inner.strip()}) + ';\n')
+for f in ('logo.js', 'logo.css', 'stepper.js', 'stepper.css', 'studio.js', 'studio.css'):
     shutil.copy(rel(os.path.join('content', 'brand', f)), os.path.join(dist, 'brand', f))
 
 traced = json.load(open(rel('content/brand/traced.json'), encoding='utf-8'))

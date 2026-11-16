@@ -61,5 +61,13 @@ window.MBMusic = (function () {
     else { const p = a.play(); if (p && p.catch) p.catch(() => {}); }
   });
 
-  return { unlock, start, stop, get playing() { return !!(a && wanted && !a.paused); }, get el() { return a; } };
+  // home page: react to the sound switch inside the tap itself (the site's own handler runs a beat later)
+  function bindSwitches() {
+    document.addEventListener('click', e => {
+      if (!a || !e.target.closest || !e.target.closest('.the-sound-switcher, .the-sound-switcher-mobile')) return;
+      if (wanted) stop(0.25); else start(url, 0.6);
+    }, true);
+  }
+
+  return { unlock, start, stop, bindSwitches, get playing() { return !!(a && wanted && !a.paused); }, get el() { return a; } };
 })();

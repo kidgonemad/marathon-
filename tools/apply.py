@@ -280,7 +280,7 @@ head += ('<link rel="stylesheet" href="/brand/logo.css"><link rel="stylesheet" h
          '<script src="/brand/logo-data.js"></script><script src="/brand/logo.js"></script>'
          '<script>window.MARATHON_STEPPER=' + json.dumps(stepper_cfg, ensure_ascii=False) + '</script>'
          '<script src="/brand/stepper.js"></script><script src="/brand/palms.js"></script>'
-         '<script src="/brand/music.js"></script>' + studio_logo_css)
+         '<script src="/brand/music.js"></script><script>window.MBMusic.bindSwitches()</script>' + studio_logo_css)
 H = head + body
 open(html_path, 'w', encoding='utf-8').write(H)
 
@@ -431,7 +431,7 @@ js_swaps = [
      'this.ambientSource))return;',
      'async playAmbient(e="ambient"){if(!this.store.isAudioEnabled||this.currentAmbientName===e&&this.ambientSource)return;'),
     ('stopAmbient(e=1.5){if(!this.ambientSource||!this.ambientGain)return;',
-     'stopAmbient(e=1.5){if(!this.ambientSource||!this.ambientGain)return;window.MBMusic&&window.MBMusic.stop(Math.min(e,1.5));'),
+     'stopAmbient(e=1.5){if(!this.ambientSource||!this.ambientGain)return;window.MBMusic&&window.MBMusic.stop(.25);'),
     # footer credit links to 33rd Creative (the logo itself is drawn/animated by /brand/studio.js)
     ('section-contacts__logo",href:"https://tubikstudio.com/"', 'section-contacts__logo",href:"https://33rdcreative.com/"'),
     # New Marathon Burger 3D parts (MB_*) get the same toon shading + outlines as the original food

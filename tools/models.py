@@ -148,7 +148,7 @@ def logo_decal(width=0.44, y_mid=0.47, r0=0.30, taper=0.39 - 0.30, h_cup=0.86, f
             'Logo_Text': (to_cup(white, 1), 'white'), 'Logo_Burger': (burger, 'logo_grey')}
 
 
-def soda(liquid_top=None, band='logo', lid=True, face=0.0):
+def soda(liquid_top=None, band='logo', lid=True, face=0.0, straw_colour='blue'):
     cup = lathe([(0, 0), (0.30, 0), (0.39, 0.86), (0.41, 0.88), (0.0, 0.88)])
     parts = {'Cup': (cup, 'cream')}
     if band == 'logo':
@@ -163,13 +163,13 @@ def soda(liquid_top=None, band='logo', lid=True, face=0.0):
         parts['Juice'] = (lathe([(0, 0.80), (0.385, 0.80), (0.385, 0.84), (0, 0.84)]), liquid_top or 'orange')
         straw_top = 0.84
     straw = tube([0.06, straw_top - 0.25, 0.0], [0.16, straw_top + 0.32, 0.04], 0.035)
-    parts['Straw'] = (straw, 'blue')
+    parts['Straw'] = (straw, straw_colour)
     return parts
 
 
-def oj():
-    """Fresh squeezed OJ: open cup with orange juice on top and a straw (no garnish)."""
-    return soda(liquid_top='orange', band='orange', lid=False)
+def oj(face=0.0):
+    """Fresh squeezed OJ: the same Marathon cup and lid as the soda, with an orange straw."""
+    return soda(face=face, straw_colour='orange')
 
 
 def crispy(m, amount, seed=0):
@@ -228,10 +228,25 @@ def wing_basket():
             m = rotated(m, 0.18 if kind == 'd' else 0.08, [1, 0, 0])
             out.append(moved(m, x, y, z))
         wings.append(out[0]); bones.append(out[1])
-    # bigger and piled up so the wings read above the basket rim
-    def pile(ms):
-        m = trimesh.util.concatenate(ms); m.apply_scale(1.3); m.apply_translation([0, 0.03, 0]); return m
-    wings, bones = [pile(wings)], [pile(bones)]
+    # fit the whole pile inside the basket: every vertex within the liner's inner wall (which widens from the
+    # floor to the rim) and above the paper, so no wing pokes through the basket
+    W, B = trimesh.util.concatenate(wings), trimesh.util.concatenate(bones)
+    allv = np.vstack([W.vertices, B.vertices])
+    def worst(v):
+        r = 0.48 + (0.58 - 0.48) * np.clip((v[:, 1] - 0.07) / 0.2, 0, 1)
+        return np.max(np.sqrt((v[:, 0] / (r * 1.25)) ** 2 + (v[:, 2] / (r * 0.95)) ** 2))
+    s = 1.25
+    while s > 0.5:
+        v = allv * s
+        v[:, 1] += 0.075 - v[:, 1].min()
+        if worst(v) <= 0.9:
+            break
+        s -= 0.02
+    for m in (W, B):
+        m.apply_scale(s)
+    lift = 0.075 - allv[:, 1].min() * s
+    W.apply_translation([0, lift, 0]); B.apply_translation([0, lift, 0])
+    wings, bones = [W], [B]
     return {'Basket': (basket, 'red'), 'PaperRed': (red_paper, 'red'), 'PaperWhite': (white_paper, 'white'),
             'Wings': (trimesh.util.concatenate(wings), 'wing'), 'Bones': (trimesh.util.concatenate(bones), 'cream')}
 
@@ -262,27 +277,20 @@ def breakfast_sandwich():
 
 
 def hashbrowns():
-    """Two golden oval hash brown patties (one flat, one leaning on it): a raised, lighter top face with a
-    rounded-looking stepped edge and a few toasted flecks."""
-    rng = np.random.default_rng(11)
-
-    def patty():
-        oval = LineString([(-0.2, 0), (0.2, 0)]).buffer(0.2, resolution=24)
-        body = yup(extrude(oval, 0.085))
-        top = yup(extrude(oval.buffer(-0.03, resolution=24), 0.03)); top.apply_translation([0, 0.085, 0])
-        flecks = []
-        for _ in range(9):
-            x, z = rng.uniform(-0.26, 0.26), rng.uniform(-0.1, 0.1)
-            d = moved(scaled(cyl(rng.uniform(0.012, 0.022), 0.006, 10), 1.6, 1, 1), x, 0.117, z)
-            flecks.append(rotated(d, rng.uniform(0, math.pi), [0, 1, 0], center=(x, 0.117, z)))
-        return body, top, trimesh.util.concatenate(flecks)
-
-    b1, t1, f1 = patty()
-    b2, t2, f2 = patty()
-    lean = lambda m: moved(rotated(rotated(m, -0.45, [0, 0, 1]), 0.5, [0, 1, 0]), 0.08, 0.19, 0.06)
-    return {'Hashbrowns': (trimesh.util.concatenate([b1, lean(b2)]), 'hash'),
-            'Tops': (trimesh.util.concatenate([t1, lean(t2)]), 'hashlite'),
-            'SoftFlecks': (trimesh.util.concatenate([f1, lean(f2)]), 'toast')}
+    """Marathon Hashbrowns: two smooth golden oval patties standing in a white paper sleeve with a red stripe."""
+    def patty(seed):
+        m = trimesh.creation.capsule(height=0.3, radius=0.17, count=[28, 28])     # long axis along Z
+        m = rotated(m, math.pi / 2, [0, 1, 0])                                     # -> along X
+        m.apply_scale([1.0, 1.0, 0.3])                                             # flatten: upright oval puck
+        return crispy(m, 0.004, seed)
+    p1 = moved(rotated(patty(1), 0.08, [0, 0, 1]), -0.03, 0.31, -0.045)
+    p2 = moved(rotated(patty(2), -0.1, [0, 0, 1]), 0.04, 0.33, 0.05)
+    outline = LineString([(-0.25, 0), (0.25, 0)]).buffer(0.115, resolution=12)
+    wall = yup(extrude(outline.difference(outline.buffer(-0.012)), 0.26))
+    floor = yup(extrude(outline, 0.012))
+    stripe = yup(extrude(outline.buffer(0.004).difference(outline.buffer(-0.008)), 0.05)); stripe.apply_translation([0, 0.19, 0])
+    return {'Hashbrowns': (trimesh.util.concatenate([p1, p2]), 'hash'),
+            'Sleeve': (trimesh.util.concatenate([wall, floor]), 'white'), 'Stripe': (stripe, 'red')}
 
 
 CA = [(-124.21, 41.99), (-120.0, 41.99), (-120.0, 39.0), (-114.63, 35.0), (-114.6, 34.3), (-114.72, 32.72),
@@ -697,7 +705,7 @@ for n in ('Astro_Chik', 'Hot_Dog', 'Ice_Cream'):
     sc.hide(n)
 sc.place('Hot_Dog', 'WingBasket', wing_basket(), sc.pivot('Hot_Dog', spots['Hot_Dog'][0]), 0, yaw=0.3, width=spots['Burger'][1][0] * 1.35)
 _p = sc.pivot('Astro_Chik', spots['Astro_Chik'][0])
-sc.place('Astro_Chik', 'Soda', soda(face=facing(_p, 200, -0.3)), _p, burger_h * 1.55, yaw=-0.3)
+sc.place('Astro_Chik', 'Soda', soda(face=facing(_p, 200, -0.3), straw_colour='purple'), _p, burger_h * 1.55, yaw=-0.3)
 
 # Tray 3 — Breakfast: Marathon Breakfast Sandwich (original brioche bun + cheese + sausage patty + egg),
 # hashbrowns, Marathon Coffee, fresh squeezed OJ
@@ -730,7 +738,8 @@ _sety('MB_BK_Bun_Top', white_top + 0.012 - b_lo)       # top bun rests on the eg
 sc.place('Pizza_French_Fries', 'Hashbrowns', hashbrowns(), sc.pivot('Pizza_French_Fries', spots['Pizza_French_Fries'][0]), 0, yaw=0.6,
          width=spots['Burger'][1][0] * 0.8)
 sc.place('Coffee', 'Coffee', coffee_cup(), sc.pivot('Coffee', spots['Coffee'][0]), burger_h * 1.2)
-sc.place('Astro_Koala', 'OJ', oj(), sc.pivot('Astro_Koala', spots['Astro_Koala'][0]), burger_h * 1.45)
+_p = sc.pivot('Astro_Koala', spots['Astro_Koala'][0])
+sc.place('Astro_Koala', 'OJ', oj(face=facing(_p, 300, 0.0)), _p, burger_h * 1.55)
 sc.save(os.path.join(out, 'slider_model.glb'))
 
 # ===================================== how-it-works scroll =================================

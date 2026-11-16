@@ -52,7 +52,7 @@
   function showSound() {
     header.querySelectorAll('.the-sound-switcher-mobile').forEach(btn => {
       btn.classList.toggle('is-muted', !audioOn);
-      const waves = [...btn.querySelectorAll('path')].filter(p => /^M 3[3-7] 1[3-6]/.test(p.getAttribute('d') || ''));
+      const waves = [...btn.querySelectorAll('path.wave')];      // both sound waves (they become the "x" when muted)
       waves.forEach((p, i) => { if (WAVES.on[i]) p.setAttribute('d', (audioOn ? WAVES.on : WAVES.off)[i]); });
     });
     if (riveSound && riveSound.value !== audioOn) riveSound.value = audioOn;
@@ -61,7 +61,7 @@
     audioOn = on; savePref(on); showSound();
     if (!window.MBMusic) return;
     if (on) { window.MBMusic.unlock(MUSIC); window.MBMusic.start(MUSIC, 1.5); }
-    else window.MBMusic.stop(1);
+    else window.MBMusic.stop(0.25);
   }
   // browsers only allow sound after a tap: start the music on the first tap anywhere if sound is on
   const firstTap = e => {

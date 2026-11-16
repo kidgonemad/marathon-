@@ -27,6 +27,9 @@ C = {
     'bacon': [0.5, 0.01, 0.0], 'orange': [1.0, 0.3, 0.0], 'wing': [0.85, 0.16, 0.01],
     'hash': [0.99, 0.6, 0.06], 'yolk': [1.0, 0.62, 0.0], 'brown': [0.33, 0.1, 0.02],
     'grey': [0.45, 0.45, 0.5], 'purple': [0.44, 0.23, 0.84],
+    # Marathon Burger build: brioche, grilled onions, American cheese, pickles, Fresno peppers, secret sauce
+    'brioche': [0.8, 0.28, 0.02], 'onion': [0.75, 0.38, 0.06], 'sauce': [1.0, 0.38, 0.18],
+    'american': [1.0, 0.62, 0.04], 'wagyu': [0.22, 0.05, 0.015], 'pickle': [0.22, 0.55, 0.02], 'fresno': [0.9, 0.03, 0.02],
 }
 
 
@@ -261,6 +264,37 @@ def palm3d():
             'Coconuts': (trimesh.util.concatenate(nuts), 'brown')}
 
 
+def toppings():
+    """House pickles + Fresno pepper rings, laid flat (replaces the lettuce)."""
+    pickles, rings = [], []
+    for k in range(5):
+        a = k * 2 * math.pi / 5 + 0.3
+        d = moved(cyl(0.075, 0.018, 24), math.cos(a) * 0.17, 0, math.sin(a) * 0.17)
+        pickles.append(d)
+    for k in range(5):
+        a = k * 2 * math.pi / 5 + 0.9
+        r = trimesh.creation.torus(0.04, 0.014, major_sections=24, minor_sections=10)  # ring in XY
+        r = rotated(r, math.pi / 2, [1, 0, 0])                                          # lay flat
+        rings.append(moved(r, math.cos(a) * 0.12, 0.02, math.sin(a) * 0.12))
+    return {'Pickles': (trimesh.util.concatenate(pickles), 'pickle'),
+            'Fresno': (trimesh.util.concatenate(rings), 'fresno')}
+
+
+def coffee_cup():
+    """Hot Marathon Coffee: white cup, brown sleeve, sip lid."""
+    return {'Cup': (lathe([(0, 0), (0.28, 0), (0.37, 0.82), (0, 0.82)]), 'white'),
+            'Sleeve': (lathe([(0, 0.24), (0.318, 0.24), (0.355, 0.56), (0, 0.56)]), 'brown'),
+            'Lid': (lathe([(0, 0.8), (0.40, 0.8), (0.40, 0.87), (0.33, 0.9), (0.33, 0.95), (0, 0.97)]), 'white')}
+
+
+def egg():
+    white = Polygon([(math.cos(a) * (0.6 + 0.05 * math.sin(a * 5)), math.sin(a) * (0.6 + 0.05 * math.sin(a * 5)))
+                     for a in np.linspace(0, 2 * math.pi, 60, endpoint=False)])
+    w = yup(extrude(white, 0.07))
+    yolk = moved(scaled(sphere(0.22), 1, 0.45, 1), 0.08, 0.07, -0.05)
+    return {'EggWhite': (w, 'white'), 'Yolk': (yolk, 'yolk')}
+
+
 # ---- glTF editing ----------------------------------------------------------------------------
 def trs_matrix(n):
     if n.matrix:
@@ -326,6 +360,19 @@ class Scene:
                 n.mesh = None
                 n.name = 'Removed_' + n.name
 
+    def remat(self, name, colour, only=None):
+        """Give every primitive of this node's mesh (or only those using material `only`) a new colour."""
+        n = self.g.nodes[self.idx(name)]
+        for pr in self.g.meshes[n.mesh].primitives:
+            if only is None or self.g.materials[pr.material].name == only:
+                pr.material = self.material(colour)
+
+    def swap_mesh(self, name, src, new_name):
+        """Point node `name` at node `src`'s mesh; rename so the site recomputes its outlines."""
+        n = self.g.nodes[self.idx(name)]
+        n.mesh = self.g.nodes[self.idx(src)].mesh
+        n.name = new_name
+
     def _view(self, data, target=None):
         while len(self.blob) % 4:
             self.blob.append(0)
@@ -386,7 +433,8 @@ class Scene:
             R = R @ extra
         T = np.eye(4); T[:3, 3] = pos
         desired = T @ R @ S
-        local = np.linalg.inv(self.world(self.idx(parent_name))) @ desired
+        pidx = parent_name if isinstance(parent_name, int) else self.idx(parent_name)
+        local = np.linalg.inv(self.world(pidx)) @ desired
         # group nodes are MBG_* (no styling); meshes are MB_* (toon shading + outlines in the site code)
         grp = self.add_node(parent_name, 'MBG_' + item_name, local)
         for part, (m, colour) in parts.items():
@@ -420,23 +468,29 @@ for n, (p, s) in spots.items():
     print(f'  {n:20s} base {np.round(p, 2)} size {np.round(s, 2)}')
 burger_h = spots['Burger'][1][1]
 
-# Tray 1 — Marathon Burger combo: double-patty burger, fries, drink
+# Tray 1 — Marathon Burger combo: the original burger reskinned to the menu build, fries, drink
 for n in ('Astro_Cat', 'Donut', 'Plat_3'):   # Plat_3 was the dessert plate
     sc.hide(n)
 sc.place('Plat_1_Empty', 'Soda', soda(), spots['Astro_Cat'][0], burger_h * 1.55, yaw=0.4)
-# double patty: shift the top half of the burger up and add a second patty + cheese
-burger = sc.idx('Burger')
-lift = 0.11
-for i in sc.subtree(burger)[1:]:
-    n = sc.g.nodes[i]
-    if n.translation and n.name in ('Burger_Cheese', 'Burger_Onions_Top', 'Burger_Salad', 'Burger_Tomato',
-                                     'Burger_Bun_Top', 'Burger_Bun_Sesame', 'Burger_Onions_Bottom'):
-        n.translation = [n.translation[0], n.translation[1] + lift, n.translation[2]]
-for src, dy in (('Burger_Patty', lift), ('Burger_Cheese', -0.0)):
-    s = sc.g.nodes[sc.idx(src)]
-    t = list(s.translation); t[1] += dy if src == 'Burger_Patty' else -lift + 0.0
-    local = trs_matrix(pygltflib.Node(translation=t, rotation=s.rotation, scale=s.scale))
-    sc.add_node('Burger', 'MB_' + src + '_2', local, s.mesh)
+
+
+def marathon_burger(sc, part_of=lambda n: n):
+    """Reskin Planetoño's burger as the Marathon Burger (menu: two wagyu patties smashed with grilled
+    onions, toasted brioche bun, Fresno peppers, house pickles, American cheese, secret sauce)."""
+    lo, hi = sc.bbox('Burger_Salad')
+    sc.hide('Burger_Bun_Sesame')                                   # brioche: no sesame
+    sc.swap_mesh('Burger_Tomato', 'Burger_Patty', 'MB_Burger_Patty_2')   # tomato -> second wagyu patty
+    for n, c in (('Burger_Bun_Top', 'brioche'), ('Burger_Bun_Bottom', 'brioche'), ('Burger_Onions_Top', 'onion'),
+                 ('Burger_Onions_Bottom', 'onion'), ('Burger_Mayonnaise_Bottom', 'sauce'), ('Burger_Cheese', 'american'),
+                 ('Burger_Patty', 'wagyu')):
+        sc.remat(n, c)
+    sc.hide('Burger_Salad')                                        # lettuce -> pickles + Fresno peppers
+    parent = sc.parent[sc.idx('Removed_Burger_Salad')]
+    sc.place(parent, 'Toppings', toppings(), np.array([(lo[0] + hi[0]) / 2, lo[1], (lo[2] + hi[2]) / 2]), 0,
+             width=max(hi[0] - lo[0], hi[2] - lo[2]) * 0.92)
+
+
+marathon_burger(sc)
 
 # Tray 2 — Hot Wing Basket: wings, fries, drink
 for n in ('Astro_Chik', 'Hot_Dog', 'Ice_Cream'):
@@ -444,13 +498,25 @@ for n in ('Astro_Chik', 'Hot_Dog', 'Ice_Cream'):
 sc.place('Plane_1_Empty', 'WingBasket', wing_basket(), spots['Hot_Dog'][0], 0, yaw=0.3, width=spots['Burger'][1][0] * 1.35)
 sc.place('Plane_0_Empty', 'Soda', soda(), spots['Astro_Chik'][0], burger_h * 1.55, yaw=-0.3)
 
-# Tray 3 — Breakfast: breakfast sandwich, hashbrowns, coffee, fresh OJ
-for n in ('Astro_Koala', 'Pizza', 'Pizza_French_Fries', 'Coffee_Cookie'):
+# Tray 3 — Breakfast: Marathon Breakfast Sandwich (original brioche bun + cheese + sausage patty + egg),
+# hashbrowns, Marathon Coffee, fresh squeezed OJ
+for n in ('Astro_Koala', 'Pizza', 'Pizza_French_Fries', 'Coffee'):
     sc.hide(n)
-sc.place('Pizza_Triangulate_3_Empty', 'BreakfastSandwich', breakfast_sandwich(), spots['Pizza'][0], 0,
-         width=spots['Burger'][1][0] * 0.95)
+bw = sc.world(sc.idx('Burger'))
+shift = np.eye(4); shift[:3, 3] = spots['Pizza'][0] - spots['Burger'][0]
+grp = sc.add_node('Pizza_Triangulate_3_Empty', 'MBG_BreakfastSandwich',
+                  np.linalg.inv(sc.world(sc.idx('Pizza_Triangulate_3_Empty'))) @ shift @ bw)
+for src, new in (('Burger_Bun_Bottom', 'MB_BK_Bun_Bottom'), ('Burger_Patty', 'MB_BK_Sausage'),
+                 ('Burger_Cheese', 'MB_BK_Cheese'), ('Burger_Bun_Top', 'MB_BK_Bun_Top')):
+    s = sc.g.nodes[sc.idx(src)]
+    sc.add_node(grp, new, trs_matrix(s), s.mesh)
+for part, (m, colour) in egg().items():
+    mi = sc.mesh(m, colour, 'MB_BK_' + part)
+    T = np.diag([0.5, 0.5, 0.5, 1.0]); T[:3, 3] = [0, 0.205, 0]
+    sc.add_node(grp, 'MB_BK_' + part, T, mi)
 sc.place('Pizza_Triangulate_2_Empty', 'Hashbrowns', hashbrowns(), spots['Pizza_French_Fries'][0], 0, yaw=0.6,
          width=spots['Burger'][1][0] * 0.8)
+sc.place('Pizza_Triangulate_5_Empty', 'Coffee', coffee_cup(), spots['Coffee'][0], burger_h * 1.2)
 sc.place('Pizza_Triangulate_1_Empty', 'OJ', oj(), spots['Astro_Koala'][0], burger_h * 1.45)
 sc.save(os.path.join(out, 'slider_model.glb'))
 
@@ -469,6 +535,7 @@ def put(parent, item, parts, centre, size, yaw=0.0, extra=None):
     sc.place(parent, item, parts, base, size, yaw, extra)
 
 
+marathon_burger(sc)
 for n in ('Donut', 'Astro_Cat', 'Planet_Empty', 'Planet_H_Empty', 'Meteor_Empty', 'Star_Empty', 'Star_2_Empty'):
     sc.hide(n)
 d = spots['Donut']; put('Donut', 'Soda', soda(), d[0], max(d[1]) * 0.9, yaw=0.3)

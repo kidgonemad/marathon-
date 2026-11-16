@@ -34,7 +34,7 @@
     if (o.flat) { el('path', { d, fill }, g); return g; }
     el('path', { d, fill: '#000', stroke: '#000', 'stroke-width': o.stroke, 'stroke-linejoin': 'round',
                  transform: `translate(0 ${o.shadow})` }, g);
-    el('path', { d, fill, stroke: '#000', 'stroke-width': o.stroke, 'stroke-linejoin': 'round', 'paint-order': 'stroke' }, g);
+    el('path', { d, fill, stroke: o.outline || '#000', 'stroke-width': o.stroke, 'stroke-linejoin': 'round', 'paint-order': 'stroke' }, g);
     return g;
   }
 
@@ -62,7 +62,7 @@
       return g;
     });
     const burger = el('g', { class: 'mb-logo__burger' }, svg);
-    cartoon(burger, D.burger.d, D.colors.burger, { flat, stroke: 16, shadow: 10 });
+    cartoon(burger, D.burger.d, D.colors.burger, { flat, stroke: 12, shadow: 10, outline: D.colors.burgerOutline });
 
     // Loader: palm row centred where the wordmark sits
     const loader = el('g', { class: 'mb-logo__loader' }, svg);

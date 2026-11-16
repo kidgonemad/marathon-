@@ -1,85 +1,233 @@
 {
-  "_source": "Transcribed from the in-store Marathon Burger menu board (content/brand/menu-photo.jpg). 'veg' marks the leaf icon items.",
+  "_source": "Transcribed from the in-store Marathon Burger menu board (content/brand/menu-photo.jpg). 'veg' marks the leaf icon items. Combo list confirmed against @themarathonclothing's Nov 2024 combo menu post.",
   "sections": [
     {
       "title": "BuRgErS",
       "items": [
-        {"name": "Marathon Burger", "price": "$15", "desc": "Two wagyu beef patties smashed with grilled onions, served on a toasted brioche bun and topped with gourmet Fresno peppers, house made pickles, American cheese, ketchup, mustard and our secret sauce."},
-        {"name": "Smash Burger", "price": "$15", "desc": "Two wagyu beef patties smashed with grilled onions, served on a toasted brioche bun and topped with house made pickles, American cheese, ketchup and mustard."},
-        {"name": "OG Burger", "price": "$15", "desc": "Two wagyu beef patties smashed with grilled onions, served on a toasted brioche bun and topped with house made pickles, red onions, American cheese, ketchup, mustard, romaine lettuce, sliced tomatoes and our secret sauce."},
-        {"name": "Portobello Mushroom Burger", "price": "$15", "veg": true, "desc": "Marinated and grilled Portobello mushroom served on a toasted vegan brioche bun and topped with gourmet Fresno peppers, romaine lettuce, house made pickles, garlic lemon aioli, red onions and sliced tomatoes."},
-        {"name": "Vegan Burger", "price": "$15", "veg": true, "desc": "Vegan patty made with wild rice and potatoes, served on a toasted brioche bun and topped with house made pickles, lettuce, tomatoes, gourmet Fresno peppers and red onions."},
-        {"name": "Chicken Sandwich", "price": "$15", "desc": "Grilled or fried chicken served with mayo, house made pickles, Fresno peppers and secret sauce. Also available dipped in wing sauce: Mild, Honey BBQ, Hot, Atomic Hot and Lemon Pepper."},
-        {"name": "Jr Marathon Burger", "price": "$10", "desc": "One wagyu beef patty smashed with grilled onions, served on a toasted brioche bun and topped with gourmet Fresno peppers, house made pickles, American cheese, ketchup, mustard and our secret sauce."}
+        {
+          "name": "Marathon Burger",
+          "price": "$15",
+          "desc": "Two wagyu beef patties smashed with grilled onions, served on a toasted brioche bun and topped with gourmet Fresno peppers, house made pickles, American cheese, ketchup, mustard and our secret sauce."
+        },
+        {
+          "name": "Smash Burger",
+          "price": "$15",
+          "desc": "Two wagyu beef patties smashed with grilled onions, served on a toasted brioche bun and topped with house made pickles, American cheese, ketchup and mustard."
+        },
+        {
+          "name": "OG Burger",
+          "price": "$15",
+          "desc": "Two wagyu beef patties smashed with grilled onions, served on a toasted brioche bun and topped with house made pickles, red onions, American cheese, ketchup, mustard, romaine lettuce, sliced tomatoes and our secret sauce."
+        },
+        {
+          "name": "Portobello Mushroom Burger",
+          "price": "$15",
+          "veg": true,
+          "desc": "Marinated and grilled Portobello mushroom served on a toasted vegan brioche bun and topped with gourmet Fresno peppers, romaine lettuce, house made pickles, garlic lemon aioli, red onions and sliced tomatoes."
+        },
+        {
+          "name": "Vegan Burger",
+          "price": "$15",
+          "veg": true,
+          "desc": "Vegan patty made with wild rice and potatoes, served on a toasted brioche bun and topped with house made pickles, lettuce, tomatoes, gourmet Fresno peppers and red onions."
+        },
+        {
+          "name": "Chicken Sandwich",
+          "price": "$15",
+          "desc": "Grilled or fried chicken served with mayo, house made pickles, Fresno peppers and secret sauce. Also available dipped in wing sauce: Mild, Honey BBQ, Hot, Atomic Hot and Lemon Pepper."
+        },
+        {
+          "name": "Jr Marathon Burger",
+          "price": "$10",
+          "desc": "One wagyu beef patty smashed with grilled onions, served on a toasted brioche bun and topped with gourmet Fresno peppers, house made pickles, American cheese, ketchup, mustard and our secret sauce."
+        }
       ]
     },
     {
       "title": "$20 CoMbO MeAl",
-      "note": "Every combo comes with a burger, fries & a drink.",
+      "note": "Every combo comes with fries & a drink.",
       "items": [
-        {"name": "Marathon Burger", "price": "$20"},
-        {"name": "Smash Burger", "price": "$20"},
-        {"name": "OG Burger", "price": "$20"},
-        {"name": "Portobello Mushroom Burger", "price": "$20", "veg": true},
-        {"name": "Vegan Burger", "price": "$20", "veg": true},
-        {"name": "Chicken Sandwich", "price": "$20"},
-        {"name": "Kid's Meal", "price": "$15", "desc": "Jr Smash Burger, small French fries and choice of a drink: apple juice, chocolate milk, Marathon Water or soda."}
+        {
+          "name": "Marathon Burger",
+          "price": "$20"
+        },
+        {
+          "name": "Smash Burger",
+          "price": "$20"
+        },
+        {
+          "name": "OG Burger",
+          "price": "$20"
+        },
+        {
+          "name": "Chicken Sandwich",
+          "price": "$20"
+        },
+        {
+          "name": "Portobello Mushroom Burger",
+          "price": "$20",
+          "veg": true
+        },
+        {
+          "name": "Vegan Burger",
+          "price": "$20",
+          "veg": true
+        },
+        {
+          "name": "Tiger Shrimp Basket",
+          "price": "$20"
+        },
+        {
+          "name": "Hot Wing Basket",
+          "price": "$20"
+        },
+        {
+          "name": "Chicken Strip Basket",
+          "price": "$20"
+        },
+        {
+          "name": "Kid's Meal",
+          "price": "$15",
+          "desc": "Jr Smash Burger, small French fries and choice of a drink: apple juice, chocolate milk, Marathon Water or soda."
+        }
       ]
     },
     {
       "title": "DoUbLe Up",
-      "items": [{"name": "Double up any burger or sandwich", "price": "$13"}]
+      "items": [
+        {
+          "name": "Double up any burger or sandwich",
+          "price": "$13"
+        }
+      ]
     },
     {
       "title": "SiDeS",
       "items": [
-        {"name": "French Fries", "price": "$4.95"},
-        {"name": "Onion Rings", "price": "$4.95"},
-        {"name": "Homemade Biscuits", "price": "$4.95", "desc": "2 pieces with honey butter."}
+        {
+          "name": "French Fries",
+          "price": "$4.95"
+        },
+        {
+          "name": "Onion Rings",
+          "price": "$4.95"
+        },
+        {
+          "name": "Homemade Biscuits",
+          "price": "$4.95",
+          "desc": "2 pieces with honey butter."
+        }
       ]
     },
     {
       "title": "MaRaThoN ClaSSiCs",
       "items": [
-        {"name": "Hot Wing Basket", "price": "$20", "desc": "10 classic (bone-in) 100% organic wings deliciously prepared in our gourmet wing sauces, with fries and a drink. Sauces: Mild, Honey BBQ, Hot, Atomic Hot and Lemon Pepper."},
-        {"name": "Chicken Strip Basket", "price": "$20", "desc": "7 100% organic chicken strips covered and fried in our original house made blend, with fries and a drink."},
-        {"name": "Tiger Shrimp Basket", "price": "$20", "desc": "6 large tiger shrimp covered and fried in our original house made blend, with fries and a drink."},
-        {"name": "Grilled Vegetable Salad", "price": "$15", "veg": true, "desc": "Red and green leaf romaine lettuce, cucumber, Fresno peppers and cherry tomatoes with grilled asparagus, yellow squash, zucchini and corn, topped with our house made sherry vinaigrette. Add grilled/fried chicken ($6) or grilled/fried shrimp ($10)."}
+        {
+          "name": "Hot Wing Basket",
+          "price": "$20",
+          "desc": "10 classic (bone-in) 100% organic wings deliciously prepared in our gourmet wing sauces, with fries and a drink. Sauces: Mild, Honey BBQ, Hot, Atomic Hot and Lemon Pepper."
+        },
+        {
+          "name": "Chicken Strip Basket",
+          "price": "$20",
+          "desc": "7 100% organic chicken strips covered and fried in our original house made blend, with fries and a drink."
+        },
+        {
+          "name": "Tiger Shrimp Basket",
+          "price": "$20",
+          "desc": "6 large tiger shrimp covered and fried in our original house made blend, with fries and a drink."
+        },
+        {
+          "name": "Grilled Vegetable Salad",
+          "price": "$15",
+          "veg": true,
+          "desc": "Red and green leaf romaine lettuce, cucumber, Fresno peppers and cherry tomatoes with grilled asparagus, yellow squash, zucchini and corn, topped with our house made sherry vinaigrette. Add grilled/fried chicken ($6) or grilled/fried shrimp ($10)."
+        }
       ]
     },
     {
       "title": "HoT WiNgS",
       "note": "100% organic wings deliciously prepared in our gourmet wing sauces: Mild, Honey BBQ, Hot, Atomic Hot and Lemon Pepper.",
       "items": [
-        {"name": "6 pc", "price": "$10"},
-        {"name": "12 pc", "price": "$15"},
-        {"name": "24 pc", "price": "$29"},
-        {"name": "50 pc", "price": "$59"},
-        {"name": "100 pc", "price": "$99"}
+        {
+          "name": "6 pc",
+          "price": "$10"
+        },
+        {
+          "name": "12 pc",
+          "price": "$15"
+        },
+        {
+          "name": "24 pc",
+          "price": "$29"
+        },
+        {
+          "name": "50 pc",
+          "price": "$59"
+        },
+        {
+          "name": "100 pc",
+          "price": "$99"
+        }
       ]
     },
     {
       "title": "BrEaKfAsT",
       "note": "7am – 12 noon",
       "items": [
-        {"name": "Marathon Breakfast Sandwich", "price": "$10", "desc": "Egg & cheese, or chicken sausage, egg & cheese."},
-        {"name": "Marathon French Toast Waffle", "price": "$10", "desc": "French toast made the Marathon way."},
-        {"name": "Marathon Hashbrowns", "price": "$3.50"},
-        {"name": "Marathon Coffee", "price": "$3.50"},
-        {"name": "Fresh Squeezed OJ", "price": "$8", "desc": "Organic orange juice."}
+        {
+          "name": "Marathon Breakfast Sandwich",
+          "price": "$10",
+          "desc": "Egg & cheese, or chicken sausage, egg & cheese."
+        },
+        {
+          "name": "Marathon French Toast Waffle",
+          "price": "$10",
+          "desc": "French toast made the Marathon way."
+        },
+        {
+          "name": "Marathon Hashbrowns",
+          "price": "$3.50"
+        },
+        {
+          "name": "Marathon Coffee",
+          "price": "$3.50"
+        },
+        {
+          "name": "Fresh Squeezed OJ",
+          "price": "$8",
+          "desc": "Organic orange juice."
+        }
       ]
     },
     {
       "title": "MiLkShAkEs",
-      "items": [{"name": "Milkshakes", "price": "$8", "desc": "Thrifty ice cream, milk and whipped cream. Flavors: vanilla, chocolate and strawberry."}]
+      "items": [
+        {
+          "name": "Milkshakes",
+          "price": "$8",
+          "desc": "Thrifty ice cream, milk and whipped cream. Flavors: vanilla, chocolate and strawberry."
+        }
+      ]
     },
     {
       "title": "DrInKs",
-      "items": [{"name": "Drinks", "price": "$3.50", "desc": "Marathon Water (natural spring water), Coca-Cola, Diet Coke, Sprite, Squirt, Orange Soda, Pineapple Soda, Strawberry Soda, Fruit Punch, Lemonade, Sweet Iced Tea and Arnold Palmer."}]
+      "items": [
+        {
+          "name": "Drinks",
+          "price": "$3.50",
+          "desc": "Marathon Water (natural spring water), Coca-Cola, Diet Coke, Sprite, Squirt, Orange Soda, Pineapple Soda, Strawberry Soda, Fruit Punch, Lemonade, Sweet Iced Tea and Arnold Palmer."
+        }
+      ]
     },
     {
       "title": "DeSSeRtS",
-      "items": [{"name": "Cream Cheese Pound Cake", "price": "$5"}]
+      "items": [
+        {
+          "name": "Cream Cheese Pound Cake",
+          "price": "$5"
+        }
+      ]
     }
   ],
   "footnote": "Consuming raw or undercooked meats, poultry, seafood, shellfish or eggs may increase your risk of foodborne illness."

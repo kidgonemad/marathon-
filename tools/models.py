@@ -31,7 +31,7 @@ C = {
     'brioche': [0.8, 0.28, 0.02], 'onion': [0.75, 0.38, 0.06], 'sauce': [1.0, 0.38, 0.18],
     'american': [1.0, 0.62, 0.04], 'wagyu': [0.22, 0.05, 0.015],
     'logo_red': [0.77, 0.02, 0.02], 'hashlite': [1.0, 0.8, 0.25], 'sauce_dark': [0.55, 0.06, 0.0],
-    'logo_grey': [0.62, 0.62, 0.62], 'toast': [0.62, 0.3, 0.04], 'pickle': [0.22, 0.55, 0.02], 'fresno': [0.9, 0.03, 0.02],
+    'logo_grey': [0.62, 0.62, 0.62], 'toast': [0.62, 0.3, 0.04], 'ink': [0.02, 0.02, 0.02], 'pickle': [0.22, 0.55, 0.02], 'fresno': [0.9, 0.03, 0.02],
 }
 
 
@@ -221,6 +221,8 @@ def wing_basket():
              (-0.12, 0.29, 0.06, 2.8, 'd')]
     for k, (x, y, z, yaw, kind) in enumerate(spots):
         meat, bone = drumette(k) if kind == 'd' else flat(k)
+        meat.apply_scale(1.55); bone.apply_scale(1.55)                    # big, chunky wings
+        x, z, y = x * 0.62, z * 0.62, 0.1 + (y - 0.12) * 1.9               # packed tighter, stacked higher
         out = []
         for m in (meat, bone):
             m = rotated(m, math.pi / 2, [0, 1, 0])
@@ -235,11 +237,11 @@ def wing_basket():
     def worst(v):
         r = 0.48 + (0.58 - 0.48) * np.clip((v[:, 1] - 0.07) / 0.2, 0, 1)
         return np.max(np.sqrt((v[:, 0] / (r * 1.25)) ** 2 + (v[:, 2] / (r * 0.95)) ** 2))
-    s = 1.25
-    while s > 0.5:
+    s = 1.0
+    while s > 0.6:
         v = allv * s
         v[:, 1] += 0.075 - v[:, 1].min()
-        if worst(v) <= 0.9:
+        if worst(v) <= 0.95:
             break
         s -= 0.02
     for m in (W, B):
@@ -606,6 +608,84 @@ def centre_of(sc, name):
     return (lo + hi) / 2, hi - lo
 
 
+def add_animation(sc, name, channels):
+    """channels: [(node_index, 'scale'|'translation', times[], values[[x,y,z],...])] -> one glTF animation clip."""
+    samplers, chans = [], []
+    for node, path, times, values in channels:
+        tt = np.array(times, np.float32); vv = np.array(values, np.float32)
+        acc = []
+        for arr, typ in ((tt, 'SCALAR'), (vv, 'VEC3')):
+            bv = sc._view(arr.tobytes())
+            sc.g.accessors.append(pygltflib.Accessor(bufferView=bv, componentType=5126, count=len(arr), type=typ,
+                                                     min=[float(tt.min())] if typ == 'SCALAR' else None,
+                                                     max=[float(tt.max())] if typ == 'SCALAR' else None))
+            acc.append(len(sc.g.accessors) - 1)
+        samplers.append(pygltflib.AnimationSampler(input=acc[0], output=acc[1], interpolation='LINEAR'))
+        chans.append(pygltflib.AnimationChannel(sampler=len(samplers) - 1, target=pygltflib.AnimationChannelTarget(node=node, path=path)))
+    sc.g.animations.append(pygltflib.Animation(name=name, samplers=samplers, channels=chans))
+
+
+def mesh_bounds(sc, name):
+    n = sc.g.nodes[sc.idx(name)]
+    pr = sc.g.meshes[n.mesh].primitives
+    lo = np.min([sc.g.accessors[q.attributes.POSITION].min for q in pr], 0)
+    hi = np.max([sc.g.accessors[q.attributes.POSITION].max for q in pr], 0)
+    return np.array(lo, float), np.array(hi, float)
+
+
+def checker_spread(sc, t0=16.3, t1=16.95, cells_x=8):
+    """Marathon checker that spreads over the meal box as the lid closes: black squares (the box is cream)
+    pop in one after another from one corner, driven by the scroll timeline like the box's own animation."""
+    channels, made = [], {}
+    def quad_mesh(axis, sign, size):
+        key = (axis, sign, round(size, 6))
+        if key in made: return made[key]
+        h = size / 2
+        corners = {0: [[0, -h, -h], [0, h, -h], [0, h, h], [0, -h, h]],
+                   1: [[-h, 0, -h], [h, 0, -h], [h, 0, h], [-h, 0, h]],
+                   2: [[-h, -h, 0], [h, -h, 0], [h, h, 0], [-h, h, 0]]}[axis]
+        v = np.array(corners, float)
+        f = np.array([[0, 1, 2], [0, 2, 3]])
+        m = trimesh.util.concatenate([trimesh.Trimesh(v, f, process=False),
+                                      trimesh.Trimesh(v - np.eye(3)[axis] * sign * size * 0.02, f[:, ::-1], process=False)])
+        made[key] = sc.mesh(m, 'ink', f'MBD_Check_{axis}{sign}')
+        return made[key]
+    faces = []
+    for part in ('Box_Upper_Part', 'Box_Bottom_Part'):
+        lo, hi = mesh_bounds(sc, part)
+        size = (hi[0] - lo[0]) / cells_x
+        eps = size * 0.03
+        if part == 'Box_Upper_Part':
+            for y in (lo[1] - eps, hi[1] + eps):                       # lid top (both faces of the plate)
+                faces.append((part, 1, 1 if y > lo[1] else -1, y, (0, 2), lo, hi, size))
+        else:
+            for ax in (0, 2):
+                for s, c in ((-1, lo[ax] - eps), (1, hi[ax] + eps)):
+                    faces.append((part, ax, s, c, (2 - ax, 1) if ax == 0 else (0, 1), lo, hi, size))
+    allc = []
+    for part, ax, s, c, (u, v), lo, hi, size in faces:
+        nu = max(1, int(round((hi[u] - lo[u]) / size))); nv = max(1, int(round((hi[v] - lo[v]) / size)))
+        su, sv = (hi[u] - lo[u]) / nu, (hi[v] - lo[v]) / nv
+        for i in range(nu):
+            for j in range(nv):
+                if (i + j) % 2: continue
+                pos = np.zeros(3); pos[ax] = c; pos[u] = lo[u] + (i + 0.5) * su; pos[v] = lo[v] + (j + 0.5) * sv
+                allc.append((part, ax, s, pos, min(su, sv)))
+    pts = np.array([p for _, _, _, p, _ in allc])
+    d = (pts[:, 0] - pts[:, 0].min()) + (pts[:, 2] - pts[:, 2].min()) + (pts[:, 1].max() - pts[:, 1]) * 0.5
+    d = d / (d.max() or 1)
+    for k, (part, ax, s, pos, size) in enumerate(allc):
+        mi = quad_mesh(ax, s, size)
+        node = pygltflib.Node(name=f'MBD_Check_{k}', mesh=mi, translation=pos.tolist(), scale=[0.0001] * 3)
+        sc.g.nodes.append(node); ni = len(sc.g.nodes) - 1
+        par = sc.idx(part)
+        sc.g.nodes[par].children = (sc.g.nodes[par].children or []) + [ni]; sc.parent[ni] = par
+        start = t0 + d[k] * (t1 - t0 - 0.2)
+        channels.append((ni, 'scale', [0.0, start, start + 0.12, start + 0.2, 17.0],
+                         [[0.0001] * 3, [0.0001] * 3, [1.15] * 3, [1.0] * 3, [1.0] * 3]))
+    add_animation(sc, 'MB_CheckerSpread', channels)
+
+
 os.makedirs(out, exist_ok=True)
 
 # ===================================== hero slider =========================================
@@ -758,6 +838,13 @@ def put(parent, item, parts, centre, size, yaw=0.0, extra=None):
 
 
 marathon_burger(sc)
+# the double-patty stack is taller than the original burger: squash it (Y only, around its base) so the bun
+# stays inside the meal box when the lid closes
+_bt = yext(sc, 'Burger_Bun_Top')[1]
+_ratio = (STACK['orig']['Burger_Bun_Top'] + _bt) / (STACK['want']['Burger_Bun_Top'] + _bt)
+_bn = sc.g.nodes[sc.idx('Burger')]
+_bn.scale = [_bn.scale[0], _bn.scale[1] * _ratio, _bn.scale[2]]
+print('  scroll burger height x', round(_ratio, 3))
 for n in ('Donut', 'Astro_Cat', 'Planet_Empty', 'Planet_H_Empty', 'Meteor_Empty', 'Star_Empty', 'Star_2_Empty'):
     sc.hide(n)
 # drink: placed against the Donut node's FINAL pose (it ends upright in the meal box), centred on its spin axis

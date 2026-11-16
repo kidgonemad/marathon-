@@ -244,6 +244,13 @@ body = re.sub(r'<canvas class="the-preloader__logo"([^>]*?)(?: width="\d+" heigh
               r'<div class="the-preloader__logo"\1\2></div>', body)
 body = re.sub(r'(<div class="decoration-bubble__inner"[^>]*>)<svg.*?</svg>', r'\1', body, flags=re.S)
 studio_logo_css = '' if C['footer'].get('show_studio_logo', True) else '<style>.section-contacts__logo{display:none!important}</style>'
+# The archived page HTML is a snapshot taken after the intro had finished, so it shows the home page
+# for a moment before the app re-creates the intro screen. Keep the page hidden until the intro exists.
+studio_logo_css += ('<style id="mb-boot">html:not(.mb-ready) #__nuxt,html:not(.mb-ready) #teleports{visibility:hidden}'
+                    'html:not(.mb-ready) body{background:#eb3322}</style>'
+                    '<script>(function(){var d=document.documentElement,done=function(){d.classList.add("mb-ready")};'
+                    'var mo=new MutationObserver(function(){if(document.querySelector(".the-preloader")){done();mo.disconnect()}});'
+                    'mo.observe(d,{childList:true,subtree:true});setTimeout(done,8000)})();</script>')
 # palm decorations: a bit larger than the ✦ they replace so the fronds read clearly
 studio_logo_css += '<style>svg.star{width:clamp(2.75rem,2.2rem + 1.7vw,4.4rem)!important;height:auto}</style>'
 body = re.sub(r'<canvas class="stepper__rive"([^>]*?) width="\d+" height="\d+"([^>]*)></canvas>',

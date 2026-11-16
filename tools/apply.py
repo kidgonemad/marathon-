@@ -228,7 +228,9 @@ head = (head.replace(html.escape(ORIG_DESC), html.escape(brand['description']))
             .replace('Tubik Studio', html.escape(brand['author']))
             .replace('https://planetono.space/', html.escape(brand['site_url'])))
 head = re.sub(r'(<link rel="(?:shortcut )?icon"[^>]*href=")[^"]*(")', r'\1/brand/favicon.svg\2', head)
-head = re.sub(r'(<link rel="apple-touch-icon"[^>]*href=")[^"]*(")', r'\1/brand/favicon.svg\2', head)
+head = re.sub(r'(<link rel="apple-touch-icon"[^>]*href=")[^"]*(")', r'\1/brand/apple-touch-icon.png\2', head)
+if '/brand/apple-touch-icon.png' not in head:          # iPhone home-screen / link-preview icon (PNG; iOS ignores SVG)
+    head += '<link rel="apple-touch-icon" sizes="180x180" href="/brand/apple-touch-icon.png">'
 if brand.get('og_image'):
     head = re.sub(r'/media/og\.png(\?cv=\d+)?', '/brand/' + os.path.basename(brand['og_image']), head)
 
@@ -299,6 +301,8 @@ os.makedirs(os.path.join(dist, 'brand'), exist_ok=True)
 shutil.copy(rel(brand['favicon']), os.path.join(dist, 'brand', 'favicon.svg'))
 if brand.get('og_image'):
     shutil.copy(rel(brand['og_image']), os.path.join(dist, 'brand', os.path.basename(brand['og_image'])))
+if brand.get('apple_icon'):
+    shutil.copy(rel(brand['apple_icon']), os.path.join(dist, 'brand', 'apple-touch-icon.png'))
 if C['footer'].get('studio_logo'):
     shutil.copy(rel(C['footer']['studio_logo']), os.path.join(dist, 'brand', 'studio-logo.svg'))
 # 33rd//Creative credit artwork: the studio's own animated logo (33rdcreative.com trace-animated.svg)

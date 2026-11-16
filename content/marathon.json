@@ -8,9 +8,10 @@
     "email": "hello@marathon.example",
     "logo_image": null,
     "favicon": "content/brand/favicon.svg",
-    "og_image": null,
+    "og_image": "content/brand/og.png",
     "logo_style": "cartoon",
-    "_logo_help": "logo_style: \"cartoon\" (Marathon Burger logo in the site's outlined cartoon style) or \"flat\" (exact original colours)."
+    "_logo_help": "logo_style: \"cartoon\" (Marathon Burger logo in the site's outlined cartoon style) or \"flat\" (exact original colours).",
+    "apple_icon": "content/brand/apple-touch-icon.png"
   },
   "nav": [
     {

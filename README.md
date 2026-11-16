@@ -27,19 +27,21 @@ and swaps in Marathon's name, logo and copy.
 |---|---|
 | `brand` | Name, meta description, author, site URL, contact email, logo (`logo_image` for your own SVG/PNG, or `logo_text` for a wordmark in the site font), favicon, share image |
 | `nav` | Menu labels and links (How it works, Locations) |
-| `ui` | START button, headphones message, "Contact" label |
+| `ui` | START button, headphones message, "Contact" label, "Email copied" message |
 | `hero_items` | 3 slides: headline lines, item description, mascot line. Must stay at 3, one per 3D tray. |
-| `how_it_works` | Label, 3 title lines, caption |
+| `how_it_works` | Label, 3 title lines, caption, the 4 step buttons (stored inside the Rive file) |
 | `locations` | Title, caption, and the pins on each star map: name, x/y position (%), popup side, detail rows. You can add or remove pins. |
 | `footer` | Headline lines (with links), left and right notes, Tubik logo on or off |
 | `colors` | Swap any of the 6 brand colors everywhere |
 
 Mixed CaPiTaLs in headlines are intentional: the Futura Passata font draws upper and lower case letters in different styles.
 
-### Still Planetoño copy (waiting for Marathon text)
+### Current Marathon copy
 
-Taglines, item descriptions, mascots (Major Paws, Cluck Rogers, Koalantis), How it works copy,
-location names and coordinates, footer lines and credits, and the meta description.
+All text slots now hold Marathon copy: runner-themed taglines, items, mascots (Pace Cat,
+Cluck Sprint, Koala Kilometre), how-it-works steps, mile-marker locations and the footer.
+The Tubik credit and logo are removed. The font credit to AlfaType Studio stays because the
+font is licensed. The email `hello@marathon.example` and the site URL are placeholders.
 
 ### Baked into artwork (can't be changed from the JSON)
 

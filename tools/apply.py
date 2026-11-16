@@ -273,6 +273,24 @@ else:
 </svg>
 ''')
 
+# ---------------------------------------------------------------- Rive animation labels
+# The How-it-works step buttons and the "Email copied" toast are text runs inside the Rive
+# file. Each is stored as property 0x8c02 + a one-byte length + UTF-8 text.
+RIVE_TEXTS = list(zip(['Choose your meal', 'Pick a snack', 'Size your fries', 'Claim your toy'],
+                      C['how_it_works']['steps']))
+RIVE_TEXTS.append(('Email copied', C['ui'].get('email_copied', 'Email copied')))
+riv_path = os.path.join(dist, 'media', 'rive.riv')
+riv = open(riv_path, 'rb').read()
+for old, new in RIVE_TEXTS:
+    o, n = old.encode(), new.encode()
+    if len(n) > 127:
+        sys.exit(f'Rive label too long (max 127 bytes): {new!r}')
+    tag = bytes([0x8c, 0x02])
+    if riv.count(tag + bytes([len(o)]) + o) == 0:
+        sys.exit(f'Rive label not found: {old!r}')
+    riv = riv.replace(tag + bytes([len(o)]) + o, tag + bytes([len(n)]) + n)
+open(riv_path, 'wb').write(riv)
+
 # ---------------------------------------------------------------- scripts and colours
 ui = C['ui']
 js_swaps = [

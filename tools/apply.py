@@ -244,6 +244,8 @@ body = re.sub(r'<canvas class="the-preloader__logo"([^>]*?)(?: width="\d+" heigh
               r'<div class="the-preloader__logo"\1\2></div>', body)
 body = re.sub(r'(<div class="decoration-bubble__inner"[^>]*>)<svg.*?</svg>', r'\1', body, flags=re.S)
 studio_logo_css = '' if C['footer'].get('show_studio_logo', True) else '<style>.section-contacts__logo{display:none!important}</style>'
+# palm decorations: a bit larger than the ✦ they replace so the fronds read clearly
+studio_logo_css += '<style>svg.star{width:clamp(2.75rem,2.2rem + 1.7vw,4.4rem)!important;height:auto}</style>'
 body = re.sub(r'<canvas class="stepper__rive"([^>]*?) width="\d+" height="\d+"([^>]*)></canvas>',
               r'<div class="stepper__rive"\1\2></div>', body)
 stepper_cfg = {'steps': C['how_it_works']['steps'], 'final': C['how_it_works']['final_step']}
@@ -335,8 +337,8 @@ entry_js = os.path.join(dist, '_nuxt', 'CJbJqNFW.js')
 ejs = open(entry_js, encoding='utf-8').read()
 star_shadow = re.search(r'createBaseVNode\("path",\{d:"(M21\.8002[^"]*)"', ejs).group(1)
 star_main = re.search(r'createBaseVNode\("path",\{d:"(M18\.2466[^"]*)"', ejs).group(1)
-palm_shadow, palm_main = palm_path(2.2, 2.8), palm_path(0, 0)
-left_shadow, left_main = palm_path(2.2, 2.8, traced['palm_left']), palm_path(0, 0, traced['palm_left'])
+palm_shadow, palm_main = palm_path(0.9, 1.2), palm_path(0, 0)
+left_shadow, left_main = palm_path(0.9, 1.2, traced['palm_left']), palm_path(0, 0, traced['palm_left'])
 # every other decoration shows the left tree (set in the browser by /brand/palms.js)
 open(os.path.join(dist, 'brand', 'palms.js'), 'w', encoding='utf-8').write(
     '(function(){var L=' + json.dumps([left_shadow, left_main]) + ';var n=0;'
@@ -350,8 +352,8 @@ for f in (entry_js, html_path):
     s = s.replace(star_shadow, palm_shadow).replace(star_main, palm_main)
     # thinner outline: the star's 3px stroke swamps the palm's thin fronds
     s = s.replace(palm_main + '",fill:"#F7F2E5",stroke:"black","stroke-width":"3"',
-                  palm_main + '",fill:"#F7F2E5",stroke:"black","stroke-width":"1"')
-    s = re.sub('(' + re.escape(palm_main) + r'" fill="#F7F2E5" stroke="black" stroke-width=")3(")', r'\g<1>1\2', s)
+                  palm_main + '",fill:"#F7F2E5",stroke:"black","stroke-width":"0.4"')
+    s = re.sub('(' + re.escape(palm_main) + r'" fill="#F7F2E5" stroke="black" stroke-width=")3(")', r'\g<1>0.4\2', s)
     open(f, 'w', encoding='utf-8').write(s)
 
 # ---------------------------------------------------------------- scripts and colours
@@ -427,9 +429,9 @@ for sec in M['sections']:
     note = f'<p class="note">{esc(sec["note"])}</p>' if sec.get('note') else ''
     secs.append(f'<section id="{sid}"><h2>{esc(sec["title"])}</h2>{note}<ul>{"".join(items)}</ul></section>')
 palm_svg = (f'<svg viewBox="0 0 46 51" xmlns="http://www.w3.org/2000/svg"><path d="{palm_shadow}" fill="#000"/>'
-            f'<path d="{palm_main}" fill="#F7F2E5" stroke="#000" stroke-width="1"/></svg>')
+            f'<path d="{palm_main}" fill="#F7F2E5" stroke="#000" stroke-width="0.4"/></svg>')
 left_svg = (f'<svg viewBox="0 0 46 51" xmlns="http://www.w3.org/2000/svg"><path d="{left_shadow}" fill="#000"/>'
-            f'<path d="{left_main}" fill="#F7F2E5" stroke="#000" stroke-width="1"/></svg>')
+            f'<path d="{left_main}" fill="#F7F2E5" stroke="#000" stroke-width="0.4"/></svg>')
 palms = ''.join(f'<div class="palm" style="left:{x}%;top:{y}%;animation-delay:{d}s">{left_svg if i % 2 else palm_svg}</div>'
                 for i, (x, y, d) in enumerate( ((10, 12, 0), (86, 18, .8), (20, 46, 1.6), (76, 44, 2.2))))
 page = open(rel('content/brand/menu.html'), encoding='utf-8').read()

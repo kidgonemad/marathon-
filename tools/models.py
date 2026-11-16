@@ -491,6 +491,8 @@ def centre_of(sc, name):
 os.makedirs(out, exist_ok=True)
 
 # ===================================== hero slider =========================================
+# New items are parented to the (now empty) item nodes the slider animates when changing slides
+# (Astro_Cat, Hot_Dog, Pizza, ... in the site's swipe list), so they slide in and out with their tray.
 sc = Scene(os.path.join(site, 'three', 'slider_model.glb'))
 spots = {n: base_of(sc, n) for n in ['Astro_Cat', 'Donut', 'Burger', 'French_Fries', 'Astro_Chik', 'Hot_Dog',
                                      'Ice_Cream', 'Astro_Koala', 'Pizza', 'Pizza_French_Fries', 'Coffee']}
@@ -501,7 +503,7 @@ burger_h = spots['Burger'][1][1]
 # Tray 1 — Marathon Burger combo: the original burger reskinned to the menu build, fries, drink
 for n in ('Astro_Cat', 'Donut', 'Plat_3'):   # Plat_3 was the dessert plate
     sc.hide(n)
-sc.place('Plat_1_Empty', 'Soda', soda(), spots['Astro_Cat'][0], burger_h * 1.55, yaw=0.4)
+sc.place('Astro_Cat', 'Soda', soda(), spots['Astro_Cat'][0], burger_h * 1.55, yaw=0.4)
 
 
 def marathon_burger(sc, part_of=lambda n: n):
@@ -525,8 +527,8 @@ marathon_burger(sc)
 # Tray 2 — Hot Wing Basket: wings, fries, drink
 for n in ('Astro_Chik', 'Hot_Dog', 'Ice_Cream'):
     sc.hide(n)
-sc.place('Plane_1_Empty', 'WingBasket', wing_basket(), spots['Hot_Dog'][0], 0, yaw=0.3, width=spots['Burger'][1][0] * 1.35)
-sc.place('Plane_0_Empty', 'Soda', soda(), spots['Astro_Chik'][0], burger_h * 1.55, yaw=-0.3)
+sc.place('Hot_Dog', 'WingBasket', wing_basket(), spots['Hot_Dog'][0], 0, yaw=0.3, width=spots['Burger'][1][0] * 1.35)
+sc.place('Astro_Chik', 'Soda', soda(), spots['Astro_Chik'][0], burger_h * 1.55, yaw=-0.3)
 
 # Tray 3 — Breakfast: Marathon Breakfast Sandwich (original brioche bun + cheese + sausage patty + egg),
 # hashbrowns, Marathon Coffee, fresh squeezed OJ
@@ -534,8 +536,7 @@ for n in ('Astro_Koala', 'Pizza', 'Pizza_French_Fries', 'Coffee'):
     sc.hide(n)
 bw = sc.world(sc.idx('Burger'))
 shift = np.eye(4); shift[:3, 3] = spots['Pizza'][0] - spots['Burger'][0]
-grp = sc.add_node('Pizza_Triangulate_3_Empty', 'MBG_BreakfastSandwich',
-                  np.linalg.inv(sc.world(sc.idx('Pizza_Triangulate_3_Empty'))) @ shift @ bw)
+grp = sc.add_node('Pizza', 'MBG_BreakfastSandwich', np.linalg.inv(sc.world(sc.idx('Pizza'))) @ shift @ bw)
 for src, new in (('Burger_Bun_Bottom', 'MB_BK_Bun_Bottom'), ('Burger_Patty', 'MB_BK_Sausage'),
                  ('Burger_Cheese', 'MB_BK_Cheese'), ('Burger_Bun_Top', 'MB_BK_Bun_Top')):
     s = sc.g.nodes[sc.idx(src)]
@@ -544,10 +545,10 @@ for part, (m, colour) in egg().items():
     mi = sc.mesh(m, colour, 'MB_BK_' + part)
     T = np.diag([0.5, 0.5, 0.5, 1.0]); T[:3, 3] = [0, 0.205, 0]
     sc.add_node(grp, 'MB_BK_' + part, T, mi)
-sc.place('Pizza_Triangulate_2_Empty', 'Hashbrowns', hashbrowns(), spots['Pizza_French_Fries'][0], 0, yaw=0.6,
+sc.place('Pizza_French_Fries', 'Hashbrowns', hashbrowns(), spots['Pizza_French_Fries'][0], 0, yaw=0.6,
          width=spots['Burger'][1][0] * 0.8)
-sc.place('Pizza_Triangulate_5_Empty', 'Coffee', coffee_cup(), spots['Coffee'][0], burger_h * 1.2)
-sc.place('Pizza_Triangulate_1_Empty', 'OJ', oj(), spots['Astro_Koala'][0], burger_h * 1.45)
+sc.place('Coffee', 'Coffee', coffee_cup(), spots['Coffee'][0], burger_h * 1.2)
+sc.place('Astro_Koala', 'OJ', oj(), spots['Astro_Koala'][0], burger_h * 1.45)
 sc.save(os.path.join(out, 'slider_model.glb'))
 
 # ===================================== how-it-works scroll =================================

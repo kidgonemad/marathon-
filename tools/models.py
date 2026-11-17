@@ -843,6 +843,7 @@ def put(parent, item, parts, centre, size, yaw=0.0, extra=None):
 
 
 marathon_burger(sc)
+sc.hide('Burger_Onions_Top')   # scroll build: the onion layer ends up inside the second cheese slice (clipped)
 # the double-patty stack is taller than the original burger: squash it (Y only, around its base) so the bun
 # stays inside the meal box when the lid closes
 _bt = yext(sc, 'Burger_Bun_Top')[1]

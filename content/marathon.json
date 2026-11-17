@@ -86,12 +86,32 @@
       "WhERE TO FIND uS"
     ],
     "caption": "Five spots across Southern California",
-    "_markers_help": "x / y are percentages across the star-map image. direction 'left' opens the popup to the left. details are label / value rows shown in the popup.",
+    "_markers_help": "All five pins on the first map, placed by real latitude/longitude (north up). x / y are % across the map.",
     "north_map": [
       {
+        "name": "CaNoGa PaRk",
+        "x": 25.0,
+        "y": 25.0,
+        "direction": null,
+        "details": [
+          [
+            "Address",
+            "7011 Canoga Ave"
+          ],
+          [
+            "City",
+            "Canoga Park, CA 91303"
+          ],
+          [
+            "Note",
+            "Food truck, Valley"
+          ]
+        ]
+      },
+      {
         "name": "MelRose",
-        "x": 35,
-        "y": 65,
+        "x": 53.4,
+        "y": 38.6,
         "direction": null,
         "details": [
           [
@@ -110,9 +130,9 @@
       },
       {
         "name": "VeNice BeaCH",
-        "x": 58,
-        "y": 27,
-        "direction": "left",
+        "x": 39.4,
+        "y": 49.9,
+        "direction": null,
         "details": [
           [
             "Address",
@@ -129,52 +149,10 @@
         ]
       },
       {
-        "name": "CaNoGa PaRk",
-        "x": 66,
-        "y": 60,
-        "direction": "left",
-        "details": [
-          [
-            "Address",
-            "7011 Canoga Ave"
-          ],
-          [
-            "City",
-            "Canoga Park, CA 91303"
-          ],
-          [
-            "Note",
-            "Food truck, Valley"
-          ]
-        ]
-      }
-    ],
-    "south_map": [
-      {
-        "name": "LoNG BeaCH",
-        "x": 31,
-        "y": 41,
-        "direction": null,
-        "details": [
-          [
-            "Address",
-            "245 Pine Ave"
-          ],
-          [
-            "City",
-            "Long Beach, CA 90802"
-          ],
-          [
-            "Note",
-            "Downtown"
-          ]
-        ]
-      },
-      {
         "name": "LAX",
-        "x": 62,
-        "y": 77,
-        "direction": "left",
+        "x": 46.9,
+        "y": 54.7,
+        "direction": null,
         "details": [
           [
             "Address",
@@ -189,8 +167,29 @@
             "Newest spot"
           ]
         ]
+      },
+      {
+        "name": "LoNG BeaCH",
+        "x": 71.9,
+        "y": 75.0,
+        "direction": "left",
+        "details": [
+          [
+            "Address",
+            "245 Pine Ave"
+          ],
+          [
+            "City",
+            "Long Beach, CA 90802"
+          ],
+          [
+            "Note",
+            "Downtown"
+          ]
+        ]
       }
-    ]
+    ],
+    "south_map": []
   },
   "footer": {
     "_help": "Each line is a string, or a list of pieces where a piece can be {\"text\": ..., \"link\": ...}.",

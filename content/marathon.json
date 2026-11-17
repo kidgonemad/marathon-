@@ -86,12 +86,12 @@
       "WhERE TO FIND uS"
     ],
     "caption": "Five spots across Southern California",
-    "_markers_help": "Pins placed by real latitude/longitude: the two maps read as one wide map (west on the left map, east on the right). x / y are % across each map.",
+    "_markers_help": "West spots on the left map, east spots on the right; each group centred in its map with real relative positions (north up).",
     "north_map": [
       {
         "name": "CaNoGa PaRk",
-        "x": 20.0,
-        "y": 25.0,
+        "x": 33.7,
+        "y": 28.0,
         "direction": null,
         "details": [
           [
@@ -110,9 +110,9 @@
       },
       {
         "name": "VeNice BeaCH",
-        "x": 53.9,
-        "y": 49.9,
-        "direction": null,
+        "x": 55.1,
+        "y": 65.0,
+        "direction": "left",
         "details": [
           [
             "Address",
@@ -130,8 +130,8 @@
       },
       {
         "name": "LAX",
-        "x": 71.5,
-        "y": 54.7,
+        "x": 66.3,
+        "y": 72.0,
         "direction": "left",
         "details": [
           [
@@ -152,8 +152,8 @@
     "south_map": [
       {
         "name": "MelRose",
-        "x": 26.7,
-        "y": 38.6,
+        "x": 38.8,
+        "y": 28.0,
         "direction": null,
         "details": [
           [
@@ -172,8 +172,8 @@
       },
       {
         "name": "LoNG BeaCH",
-        "x": 70.0,
-        "y": 75.0,
+        "x": 61.2,
+        "y": 72.0,
         "direction": "left",
         "details": [
           [

@@ -86,11 +86,11 @@
       "WhERE TO FIND uS"
     ],
     "caption": "Five spots across Southern California",
-    "_markers_help": "All five pins on the first map, placed by real latitude/longitude (north up). x / y are % across the map.",
+    "_markers_help": "Pins placed by real latitude/longitude: the two maps read as one wide map (west on the left map, east on the right). x / y are % across each map.",
     "north_map": [
       {
         "name": "CaNoGa PaRk",
-        "x": 25.0,
+        "x": 20.0,
         "y": 25.0,
         "direction": null,
         "details": [
@@ -109,28 +109,8 @@
         ]
       },
       {
-        "name": "MelRose",
-        "x": 53.4,
-        "y": 38.6,
-        "direction": null,
-        "details": [
-          [
-            "Address",
-            "7507 Melrose Ave"
-          ],
-          [
-            "City",
-            "Los Angeles, CA 90046"
-          ],
-          [
-            "Note",
-            "The flagship"
-          ]
-        ]
-      },
-      {
         "name": "VeNice BeaCH",
-        "x": 39.4,
+        "x": 53.9,
         "y": 49.9,
         "direction": null,
         "details": [
@@ -150,9 +130,9 @@
       },
       {
         "name": "LAX",
-        "x": 46.9,
+        "x": 71.5,
         "y": 54.7,
-        "direction": null,
+        "direction": "left",
         "details": [
           [
             "Address",
@@ -167,10 +147,32 @@
             "Newest spot"
           ]
         ]
+      }
+    ],
+    "south_map": [
+      {
+        "name": "MelRose",
+        "x": 26.7,
+        "y": 38.6,
+        "direction": null,
+        "details": [
+          [
+            "Address",
+            "7507 Melrose Ave"
+          ],
+          [
+            "City",
+            "Los Angeles, CA 90046"
+          ],
+          [
+            "Note",
+            "The flagship"
+          ]
+        ]
       },
       {
         "name": "LoNG BeaCH",
-        "x": 71.9,
+        "x": 70.0,
         "y": 75.0,
         "direction": "left",
         "details": [
@@ -188,8 +190,7 @@
           ]
         ]
       }
-    ],
-    "south_map": []
+    ]
   },
   "footer": {
     "_help": "Each line is a string, or a list of pieces where a piece can be {\"text\": ..., \"link\": ...}.",

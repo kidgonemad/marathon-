@@ -1,4 +1,4 @@
-"""Download the on-demand assets the Planetoño bundle loads (3D models, textures, Rive file,
+"""Download the on-demand assets the template bundle loads (3D models, textures, Rive file,
 sounds) and point the JS at local copies so the site runs without external hosts.
 
 Usage: python3 -I tools/localize.py <site_dir>

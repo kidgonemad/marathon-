@@ -1,4 +1,4 @@
-"""Extract a Safari .webarchive of planetono.space into a static site folder.
+"""Extract a Safari .webarchive of the original template site into a static folder.
 
 Usage: python3 -I tools/extract.py <file.webarchive> <out_dir>
 """

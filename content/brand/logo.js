@@ -1,4 +1,4 @@
-/* Marathon Burger animated logo — replaces Planetoño's Rive "loader_animation" logo.
+/* Marathon Burger animated logo — replaces the template's Rive "loader_animation" logo.
  *
  * Sequence (matched to the original Rive file):
  *   loading  : a row of palm trees pops in one by one (the original used ✦ sparkles)

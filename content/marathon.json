@@ -1,5 +1,5 @@
 {
-  "_readme": "Every editable slot on the Planetoño-based Marathon page. Edit values, then run: python3 -I tools/apply.py. Values still marked are the original copy, waiting for Marathon text. Mixed CaPs are intentional: the Futura Passata font draws upper and lower case letters in different styles.",
+  "_readme": "Every editable slot on the Marathon Burger home page. Edit values, then run: python3 -I tools/apply.py. Values still marked are the original copy, waiting for Marathon text. Mixed CaPs are intentional: the Futura Passata font draws upper and lower case letters in different styles.",
   "brand": {
     "name": "Marathon Burger",
     "description": "Marathon Burger: double wagyu smash burgers, hot wings and breakfast in Melrose, Venice Beach, Canoga Park, Long Beach and LAX.",

@@ -1,6 +1,6 @@
 # Marathon Burger
 
-The Marathon Burger website, built on the Planetoño site (planetono.space by Tubik Studio, used with permission).
+The Marathon Burger website, built on a licensed site template (used with permission).
 Design by 33rdcreative.
 
 It keeps the original's look and motion: the intro and START screen, the 3D trays, the scroll-built meal, the star
@@ -27,7 +27,7 @@ maps, the sounds and the custom cursor. Everything brand-specific is now Maratho
 
 | Folder | What it is |
 |---|---|
-| `site/` | The original Planetoño build, made runnable offline. Don't edit by hand. |
+| `base/` | The original template build, made runnable offline. Don't edit by hand. |
 | `content/marathon.json` | Home page copy: brand, nav, hero slides, badges, how-it-works, locations, footer, colours |
 | `content/menu.json` | The menu page (sections, items, prices, descriptions) |
 | `content/brand/` | Logo source and traced paths, palm, logo/stepper code, menu page template |
@@ -53,8 +53,8 @@ If you change the 3D items, badge text or logo artwork, regenerate them first. T
 ```
 pip install pygltflib trimesh numpy shapely mapbox_earcut fonttools brotli potracer pillow
 python tools/trace_brand.py content/brand/marathon-burger-logo.webp content/brand/palm.jpg content/brand/traced.json
-python tools/models.py site content/three
-python tools/badges.py site content/marathon.json content/lottie
+python tools/models.py base content/three
+python tools/badges.py base content/marathon.json content/lottie
 python3 -I tools/apply.py
 ```
 
@@ -63,11 +63,3 @@ python3 -I tools/apply.py
 - The contact email is a placeholder (`hello@marathon.example`). Set `brand.email` in `content/marathon.json`.
 - Menu descriptions are transcribed from the menu-board photo. Check them against the current menu.
 
-## Rebuilding `site/` from the original archive
-
-Run this only if starting over:
-
-```
-python3 -I tools/extract.py <Planetono.webarchive> site
-python3 -I tools/localize.py site     # 3D models, Rive, sounds, Lottie files from the live site
-```

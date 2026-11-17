@@ -1,6 +1,6 @@
-"""Build the Marathon site: copy site/ to dist/ and apply content/marathon.json.
+"""Build the Marathon site: copy base/ to dist/ and apply content/marathon.json.
 
-Usage: python3 -I tools/apply.py [content.json] [site_dir] [dist_dir]
+Usage: python3 -I tools/apply.py [content.json] [base_dir] [dist_dir]
 
 Text lives in two places: the server-rendered HTML and the Nuxt payload
 (<script id="__NUXT_DATA__">) that the page re-renders from in the browser. The payload
@@ -14,7 +14,7 @@ import payload  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 content_path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'content', 'marathon.json')
-site = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, 'site')
+site = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, 'base')
 dist = sys.argv[3] if len(sys.argv) > 3 else os.path.join(ROOT, 'dist')
 C = json.load(open(content_path, encoding='utf-8'))
 
@@ -216,6 +216,16 @@ set_rich(foot, 'title', C['footer']['headline'])
 set_rich(foot, 'footer_caption_left', C['footer']['left_note'])
 set_rich(foot, 'footer_caption_right', C['footer']['right_note'])
 
+# Leftover old-brand strings that nothing displays any more (the page data keeps every original string,
+# even after the Marathon copy replaced it): the old name, its description and the replaced copy.
+_OLD_DESC = "We tried making this real. NASA said No. So for now, it's just a delicious concept by Tubik."
+_orphans = {o for o, _ in text_swaps} | {_OLD_DESC}
+for _i, _v in enumerate(P.arr):
+    if isinstance(_v, str):
+        if _v in _orphans:
+            P.arr[_i] = ''
+        elif 'Planetoño' in _v:
+            P.arr[_i] = _v.replace('Planetoño', brand['name'])
 H = payload.dump(H, P.arr)
 
 # ---------------------------------------------------------------- server HTML
@@ -237,6 +247,12 @@ if brand.get('og_image'):
 for old, new in text_swaps:
     o, n = html.escape(old, quote=False), html.escape(new, quote=False)
     body = body.replace('>' + o + '<', '>' + n + '<')
+    body = body.replace('aria-label="' + html.escape(old) + '"', 'aria-label="' + html.escape(new) + '"')
+# the snapshot also holds the old hero copy split into per-line <div>s; the app re-renders those from the page
+# data on load, so just blank any snapshot line that still carries old copy
+_old_words = {w for o, _ in text_swaps for w in re.findall(r"[A-Za-z]{5,}", o)} - {w for _, n in text_swaps for w in re.findall(r"[A-Za-z]{5,}", n)}
+body = re.sub(r'(<div class="line"[^>]*>)([^<]*)(</div>)',
+              lambda m: m.group(1) + ('' if any(w in m.group(2) for w in _old_words) else m.group(2)) + m.group(3), body)
 body = body.replace('mail@tubikstudio.com', html.escape(brand['email']))
 body = re.sub(r'<p[^>]*>(?:(?!</p>).)*tubikstudio\.com(?:(?!</p>).)*</p>', '', body, flags=re.S)  # old "By tubik" line
 body = body.replace('href="https://tubikstudio.com/"', 'href="https://33rdcreative.com/"')
@@ -290,7 +306,7 @@ open(html_path, 'w', encoding='utf-8').write(H)
 for f in glob.glob(rel('content/three/*.glb')):
     shutil.copy(f, os.path.join(dist, 'three', os.path.basename(f)))
 if os.path.exists(rel('content/media/marathon-music.mp3')):     # site music (looped by the site's audio manager)
-    # served as marathon-music.mp3 (see js_swaps); the original Planetoño ambient track is not shipped
+    # served as marathon-music.mp3 (see js_swaps); the template's original ambient track is not shipped
     # published under a versioned name so phones can't keep playing a cached copy of an earlier song
     shutil.copy(rel('content/media/marathon-music.mp3'), os.path.join(dist, 'media', 'sounds', 'marathon-music-2.mp3'))
 for f in glob.glob(rel('content/lottie/*.json')):     # badges, built by tools/badges.py

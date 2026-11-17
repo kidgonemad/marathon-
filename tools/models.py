@@ -1,4 +1,4 @@
-"""Swap the Planetoño food/mascot models for Marathon Burger ones in the site's 3D scenes.
+"""Swap the template's food/mascot models for Marathon Burger ones in the site's 3D scenes.
 
 Usage: python tools/models.py <site_dir> <out_dir>
 Needs: pygltflib trimesh numpy shapely mapbox_earcut  (pip install ...)
@@ -17,7 +17,7 @@ import trimesh
 from shapely.geometry import Polygon, LineString, Point
 from shapely import affinity
 
-site, out = sys.argv[1], sys.argv[2]  # out: content/three (copied over site/three by apply.py)
+site, out = sys.argv[1], sys.argv[2]  # out: content/three (copied over base/three by apply.py)
 
 # ---- palette (linear RGB, taken from the existing materials) ------------------------------
 C = {
@@ -725,7 +725,7 @@ def yext(sc, name):
 
 
 def marathon_burger(sc, part_of=lambda n: n):
-    """Reskin Planetoño's burger as the Marathon Burger (menu: two wagyu patties smashed with grilled
+    """Reskin the template's burger as the Marathon Burger (menu: two wagyu patties smashed with grilled
     onions, toasted brioche bun, Fresno peppers, house pickles, American cheese, secret sauce) and restack
     it bun / sauce / patty / cheese / patty / cheese / onions / pickles+Fresno / bun so nothing clips."""
     sc.hide('Burger_Bun_Sesame')                                   # brioche: no sesame

@@ -31,7 +31,7 @@ C = {
     'brioche': [0.8, 0.28, 0.02], 'onion': [0.75, 0.38, 0.06], 'sauce': [1.0, 0.38, 0.18],
     'american': [1.0, 0.62, 0.04], 'wagyu': [0.22, 0.05, 0.015],
     'logo_red': [0.77, 0.02, 0.02], 'hashlite': [1.0, 0.8, 0.25], 'sauce_dark': [0.55, 0.06, 0.0],
-    'logo_grey': [0.62, 0.62, 0.62], 'toast': [0.62, 0.3, 0.04], 'ink': [0.02, 0.02, 0.02], 'pickle': [0.22, 0.55, 0.02], 'fresno': [0.9, 0.03, 0.02],
+    'green_dark': [0.0, 0.22, 0.07], 'logo_grey': [0.62, 0.62, 0.62], 'toast': [0.62, 0.3, 0.04], 'ink': [0.02, 0.02, 0.02], 'pickle': [0.22, 0.55, 0.02], 'fresno': [0.9, 0.03, 0.02],
 }
 
 
@@ -783,9 +783,14 @@ marathon_burger(sc)
 # Tray 2 — Hot Wing Basket: wings, fries, drink
 for n in ('Astro_Chik', 'Hot_Dog', 'Ice_Cream'):
     sc.hide(n)
-sc.place('Hot_Dog', 'WingBasket', wing_basket(), sc.pivot('Hot_Dog', spots['Hot_Dog'][0]), 0, yaw=0.3, width=spots['Burger'][1][0] * 1.8)
+# rest the basket ON the tray: its floor goes on top of the holder under it (and the block beside it),
+# not at the old hot dog's lowest point, which sat below the tray surface
+_wb = sc.pivot('Hot_Dog', spots['Hot_Dog'][0]).copy()
+_wb[1] = max(sc.bbox('Plane_1')[1][1], sc.bbox('Plane_4')[1][1]) + 0.05
+_wb[0] += 1.5; _wb[2] += 1.5                      # nudge away from the drink so the rim doesn't touch the cup
+sc.place('Hot_Dog', 'WingBasket', wing_basket(), _wb, 0, yaw=0.3, width=spots['Burger'][1][0] * 1.5)
 _p = sc.pivot('Astro_Chik', spots['Astro_Chik'][0])
-sc.place('Astro_Chik', 'Soda', soda(face=facing(_p, 200, -0.3), straw_colour='purple'), _p, burger_h * 1.55, yaw=-0.3)
+sc.place('Astro_Chik', 'Soda', soda(face=facing(_p, 200, -0.3), straw_colour='green_dark'), _p, burger_h * 1.55, yaw=-0.3)
 
 # Tray 3 — Breakfast: Marathon Breakfast Sandwich (original brioche bun + cheese + sausage patty + egg),
 # hashbrowns, Marathon Coffee, fresh squeezed OJ

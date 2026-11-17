@@ -219,7 +219,16 @@ set_rich(foot, 'footer_caption_right', C['footer']['right_note'])
 # Leftover old-brand strings that nothing displays any more (the page data keeps every original string,
 # even after the Marathon copy replaced it): the old name, its description and the replaced copy.
 _OLD_DESC = "We tried making this real. NASA said No. So for now, it's just a delicious concept by Tubik."
-_orphans = {o for o, _ in text_swaps} | {_OLD_DESC}
+def _strings(x):
+    if isinstance(x, str): yield x
+    elif isinstance(x, dict):
+        for v in x.values(): yield from _strings(v)
+    elif isinstance(x, list):
+        for v in x: yield from _strings(v)
+# never blank a string that is still in use (the page data stores identical strings once, so e.g. the old
+# 'Locations' copy and the live 'Locations' nav label are the same entry)
+_in_use = {n for _, n in text_swaps} | set(_strings(C))
+_orphans = ({o for o, _ in text_swaps} | {_OLD_DESC}) - _in_use
 for _i, _v in enumerate(P.arr):
     if isinstance(_v, str):
         if _v in _orphans:
